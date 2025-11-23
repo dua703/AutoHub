@@ -143,6 +143,14 @@ export default function BuyPage() {
     setFilteredCars(result)
   }
 
+  // ---------- MEMOIZED MAKES ARRAY ----------
+  // Extract unique makes using type guard to ensure strict string[] type
+  const makes: string[] = useMemo(
+    () =>
+      Array.from(new Set(cars.map((c) => c.make).filter(isString))).sort(),
+    [cars]
+  )
+
   // ---------- LOADING ----------
   if (loading) {
     return (
@@ -208,13 +216,7 @@ export default function BuyPage() {
         <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
           <CarFilters
             onFilterChange={handleFilterChange}
-            makes={useMemo(() => {
-              // Extract unique makes, filtering out undefined/null values using type guard
-              const makesArray = cars
-                .map((c) => c.make)
-                .filter(isString) // Type guard: narrows (string | undefined)[] to string[]
-              return Array.from(new Set(makesArray)).sort()
-            }, [cars])}
+            makes={makes}
           />
         </div>
 
