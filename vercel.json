@@ -5,7 +5,7 @@
   "framework": "nextjs",
   "regions": ["iad1"],
   "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://smobrqxvdvmsqzmyglmu.supabase.co",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
     "UPLOADTHING_SECRET": "@uploadthing_secret",
     "UPLOADTHING_APP_ID": "@uploadthing_app_id"
