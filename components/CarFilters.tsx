@@ -105,7 +105,7 @@ export default function CarFilters({ onFilterChange, makes }: CarFiltersProps) {
           <Input
             id="maxYear"
             type="number"
-            placeholder={new Date().getFullYear()}
+            placeholder={String(new Date().getFullYear())}
             value={filters.maxYear}
             onChange={(e) => handleChange('maxYear', e.target.value)}
           />

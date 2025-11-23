@@ -13,6 +13,22 @@ import { useToast } from '@/components/ui/toast'
 
 type SortOption = 'newest' | 'oldest' | 'price-low' | 'price-high' | 'name-asc' | 'name-desc'
 
+/**
+ * Type guard to filter out undefined/null values and ensure array contains only strings
+ * This properly narrows the type from (string | undefined)[] to string[]
+ */
+const isString = (value: string | undefined | null): value is string => {
+  return typeof value === 'string' && value.length > 0
+}
+
+/**
+ * Type guard to filter out undefined/null values and ensure array contains only numbers
+ * This properly narrows the type from (number | undefined)[] to number[]
+ */
+const isNumber = (value: number | undefined | null): value is number => {
+  return typeof value === 'number' && !isNaN(value)
+}
+
 export default function BuyPage() {
   const supabase = createClientSupabase()
   const toast = useToast()
@@ -40,9 +56,9 @@ export default function BuyPage() {
       setCars(data || [])
       setFilteredCars(data || [])
       
-      // Extract unique categories
+      // Extract unique categories using type guard to ensure only strings
       const uniqueCategories = Array.from(
-        new Set((data || []).map((car) => car.category).filter(Boolean))
+        new Set((data || []).map((car) => car.category).filter(isString))
       ).sort()
       setCategories(uniqueCategories)
     } catch (error) {
@@ -214,7 +230,7 @@ export default function BuyPage() {
         <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
           <CarFilters
             onFilterChange={handleFilterChange}
-            makes={Array.from(new Set(cars.map((c) => c.make).filter(Boolean))).sort()}
+            makes={Array.from(new Set(cars.map((c) => c.make).filter(isString))).sort()}
           />
         </div>
 
