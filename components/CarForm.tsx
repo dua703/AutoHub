@@ -66,6 +66,11 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
       return
     }
 
+    if (images.length > 10) {
+      alert('Maximum 10 images allowed. Please remove some images.')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -152,55 +157,67 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label>Images *</Label>
-        <UploadButton
-          endpoint="imageUploader"
-          onClientUploadComplete={(res) => {
-            if (res) {
-              const urls = res.map((file) => file.url)
-              setImages((prev) => [...prev, ...urls])
-            }
-          }}
-          onUploadError={(error: Error) => {
-            alert(`Upload failed: ${error.message}`)
-          }}
-        />
+        <Label>Images * (Max 10)</Label>
+        <div className="w-full max-w-full overflow-hidden">
+          <UploadButton
+            endpoint="imageUploader"
+            onClientUploadComplete={(res) => {
+              if (res) {
+                const urls = res.map((file) => file.url)
+                const newImages = [...images, ...urls]
+                // Limit to 10 images max
+                if (newImages.length > 10) {
+                  alert('Maximum 10 images allowed. Only the first 10 will be saved.')
+                  setImages(newImages.slice(0, 10))
+                } else {
+                  setImages(newImages)
+                }
+              }
+            }}
+            onUploadError={(error: Error) => {
+              alert(`Upload failed: ${error.message}`)
+            }}
+            className="w-full ut-button:bg-primary ut-button:text-primary-foreground ut-button:hover:bg-primary/90 ut-allowed-content:text-muted-foreground"
+          />
+        </div>
         {images.length > 0 && (
           <div className="mt-4">
             <p className="text-sm text-muted-foreground mb-2">
-              {images.length} image(s) uploaded
+              {images.length} / 10 image(s) uploaded
             </p>
-            <div className="grid grid-cols-4 gap-2">
-              {images.map((url, index) => (
-                <div key={index} className="relative group">
-                  <div className="relative h-20 rounded-md overflow-hidden border">
-                    <img
-                      src={url}
-                      alt={`Upload ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(index)}
-                    className="absolute top-1 right-1 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label="Remove image"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                        clipRule="evenodd"
+            <div className="w-full overflow-x-auto">
+              <div className="flex gap-2 min-w-max sm:grid sm:grid-cols-2 md:grid-cols-4 sm:min-w-0">
+                {images.map((url, index) => (
+                  <div key={index} className="relative group flex-shrink-0 w-20 h-20 sm:w-full sm:h-auto">
+                    <div className="relative h-20 sm:h-24 rounded-md overflow-hidden border">
+                      <img
+                        src={url}
+                        alt={`Upload ${index + 1}`}
+                        className="w-full h-full object-cover"
                       />
-                    </svg>
-                  </button>
-                </div>
-              ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index)}
+                      className="absolute top-1 right-1 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      aria-label="Remove image"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

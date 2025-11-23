@@ -39,28 +39,30 @@ export default function CarGallery({ images, title }: CarGalleryProps) {
         />
       </div>
       
-      {/* Thumbnail Grid - Responsive */}
+      {/* Thumbnail Grid - Responsive with horizontal scroll on mobile */}
       {images.length > 1 && (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 gap-2 sm:gap-3 overflow-x-auto pb-2">
-          {images.map((image, index) => (
-            <button
-              key={index}
-              onClick={() => setSelectedImage(index)}
-              className={`relative h-16 sm:h-20 md:h-24 rounded-md overflow-hidden border-2 transition-all touch-manipulation ${
-                selectedImage === index
-                  ? 'border-primary ring-2 ring-primary ring-offset-2'
-                  : 'border-transparent hover:border-gray-300 active:border-gray-400'
-              }`}
-              aria-label={`View image ${index + 1}`}
-            >
-              <Image
-                src={image}
-                alt={`${title} - Thumbnail ${index + 1}`}
-                fill
-                className="object-cover"
-              />
-            </button>
-          ))}
+        <div className="w-full overflow-x-auto pb-2">
+          <div className="flex sm:grid sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 gap-2 sm:gap-3 min-w-max sm:min-w-0">
+            {images.map((image, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedImage(index)}
+                className={`relative h-16 sm:h-20 md:h-24 w-16 sm:w-full rounded-md overflow-hidden border-2 transition-all touch-manipulation flex-shrink-0 ${
+                  selectedImage === index
+                    ? 'border-primary ring-2 ring-primary ring-offset-2'
+                    : 'border-transparent hover:border-gray-300 active:border-gray-400'
+                }`}
+                aria-label={`View image ${index + 1}`}
+              >
+                <Image
+                  src={image}
+                  alt={`${title} - Thumbnail ${index + 1}`}
+                  fill
+                  className="object-cover"
+                />
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

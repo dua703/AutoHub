@@ -119,7 +119,10 @@ function AdminContent() {
 
       if (error) throw error
 
+      // Remove from local state immediately for instant UI update
+      setCars((prev) => prev.filter((car) => car.id !== carId))
       toast.success('Car deleted successfully')
+      // Refresh data to ensure consistency
       fetchData()
     } catch (error) {
       console.error('Error deleting car:', error)

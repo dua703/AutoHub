@@ -53,9 +53,14 @@ export default function CarCard({ car }: CarCardProps) {
             📍 {car.reg_city || car.location}
           </p>
         )}
-        <p className="text-2xl font-bold text-primary mt-auto">
-          {formatPrice(car.price)}
-        </p>
+        <div className="mt-auto">
+          <p className="text-2xl font-bold text-primary">
+            {formatPrice(car.price)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            PKR {car.price.toLocaleString()}
+          </p>
+        </div>
       </CardContent>
       <CardFooter className="p-4 pt-0">
         <Link href={`/cars/${car.id}`} className="w-full">

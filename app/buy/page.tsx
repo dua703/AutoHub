@@ -42,6 +42,29 @@ export default function BuyPage() {
   // ---------- FETCH CARS ----------
   useEffect(() => {
     fetchCars()
+
+    // Set up real-time subscription for car deletions
+    const channel = supabase
+      .channel('cars-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'cars',
+        },
+        (payload) => {
+          // Remove deleted car from state immediately
+          setCars((prev) => prev.filter((car) => car.id !== payload.old.id))
+          setFilteredCars((prev) => prev.filter((car) => car.id !== payload.old.id))
+        }
+      )
+      .subscribe()
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const fetchCars = async () => {
