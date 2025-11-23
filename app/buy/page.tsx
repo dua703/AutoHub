@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Search, SlidersHorizontal } from 'lucide-react'
 import CarCard from '@/components/CarCard'
 import CarFilters, { FilterState } from '@/components/CarFilters'
@@ -208,13 +208,13 @@ export default function BuyPage() {
         <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
           <CarFilters
             onFilterChange={handleFilterChange}
-            makes={Array.from(
-              new Set(
-                cars
-                  .map((c) => c.make)
-                  .filter(isString) // Type guard: removes undefined/null and ensures string[]
-              )
-            ).sort()}
+            makes={useMemo(() => {
+              // Extract unique makes, filtering out undefined/null values using type guard
+              const makesArray = cars
+                .map((c) => c.make)
+                .filter(isString) // Type guard: narrows (string | undefined)[] to string[]
+              return Array.from(new Set(makesArray)).sort()
+            }, [cars])}
           />
         </div>
 
