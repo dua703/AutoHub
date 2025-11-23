@@ -12,7 +12,7 @@ A production-ready car marketplace website built with Next.js 14, Supabase, and 
 - ✅ **Protected Routes** - Login required for posting
 - ✅ **Responsive Design** - Mobile-first, fully responsive
 - ✅ **TypeScript** - Fully typed codebase
-- ✅ **Production Ready** - Optimized for Vercel deployment
+- ✅ **Production Ready** - Ready for deployment on Render.com or Vercel
 
 ## 🛠️ Tech Stack
 
@@ -29,7 +29,7 @@ A production-ready car marketplace website built with Next.js 14, Supabase, and 
 - Node.js 18+ and npm
 - Supabase account
 - UploadThing account
-- Vercel account (for deployment)
+- Render.com account (for deployment) or Vercel
 
 ## 🚀 Quick Start
 
@@ -94,12 +94,76 @@ lib/
 
 middleware.ts        # Supabase SSR middleware
 next.config.js       # Next.js configuration
-vercel.json          # Vercel deployment config
+render.yaml          # Render.com deployment config
 ```
 
 ## 🚢 Deployment
 
-### Deploy to Vercel
+### Deploy to Render.com
+
+#### Prerequisites
+- GitHub repository with your code
+- Render.com account (sign up at [render.com](https://render.com))
+
+#### Step-by-Step Deployment
+
+1. **Push your code to GitHub**
+   ```bash
+   git add .
+   git commit -m "Ready for Render deployment"
+   git push origin main
+   ```
+
+2. **Create a new Web Service on Render**
+   - Go to [Render Dashboard](https://dashboard.render.com)
+   - Click "New +" → "Web Service"
+   - Connect your GitHub repository
+   - Select the AutoHub repository
+
+3. **Configure the Service**
+   - **Name**: `autohub` (or your preferred name)
+   - **Environment**: `Node`
+   - **Build Command**: `npm run build`
+   - **Start Command**: `npm start`
+   - **Plan**: Choose Starter (free) or any paid plan
+
+4. **Set Environment Variables**
+   
+   In the Render dashboard, go to **Environment** section and add these variables:
+   
+   | Variable | Description | Where to Find |
+   |----------|-------------|---------------|
+   | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | Supabase Dashboard → Settings → API → Project URL |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous/public key | Supabase Dashboard → Settings → API → anon public key |
+   | `UPLOADTHING_SECRET` | UploadThing secret key | UploadThing Dashboard → Your App → Secret Key |
+   | `UPLOADTHING_APP_ID` | UploadThing app ID | UploadThing Dashboard → Your App → App ID |
+   
+   **Important**: 
+   - Do NOT use `@` symbols in environment variable values
+   - Add the actual values directly (not placeholders)
+   - All variables are case-sensitive
+
+5. **Deploy**
+   - Click "Create Web Service"
+   - Render will automatically build and deploy your app
+   - Wait for the build to complete (usually 5-10 minutes)
+   - Your app will be available at `https://your-app-name.onrender.com`
+
+6. **Configure Supabase CORS**
+   - Go to Supabase Dashboard → Settings → API
+   - Add your Render domain to allowed origins:
+     ```
+     https://your-app-name.onrender.com
+     ```
+
+#### Using render.yaml (Alternative Method)
+
+If you prefer using the `render.yaml` file:
+1. The `render.yaml` file is already included in the repository
+2. In Render dashboard, select "Apply render.yaml" when creating the service
+3. Still need to manually add environment variables in the dashboard
+
+### Deploy to Vercel (Alternative)
 
 1. Push code to GitHub
 2. Import project in Vercel
@@ -133,12 +197,23 @@ npm run lint
 
 ## 📝 Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
-| `UPLOADTHING_SECRET` | UploadThing secret key | Yes |
-| `UPLOADTHING_APP_ID` | UploadThing app ID | Yes |
+### Required for Render.com Deployment
+
+These environment variables **must** be set in the Render dashboard before deployment:
+
+| Variable | Description | Required | Where to Find |
+|----------|-------------|----------|---------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes | Supabase Dashboard → Settings → API → Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous/public key | Yes | Supabase Dashboard → Settings → API → anon public key |
+| `UPLOADTHING_SECRET` | UploadThing secret key | Yes | UploadThing Dashboard → Your App → Secret Key |
+| `UPLOADTHING_APP_ID` | UploadThing app ID | Yes | UploadThing Dashboard → Your App → App ID |
+
+**Important Notes:**
+- ⚠️ **Never commit secrets to Git** - Always use environment variables
+- ⚠️ **No `@` symbols** - Render doesn't use Vercel's `@variable` syntax
+- ⚠️ **Add actual values** - Not placeholders like `@supabase_url`
+- ✅ **Case-sensitive** - Variable names must match exactly
+- ✅ **Set before first deploy** - Add all variables in Render dashboard before deploying
 
 ## 🗄️ Database Schema
 
