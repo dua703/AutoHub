@@ -206,8 +206,8 @@ export default function BuyPage() {
             makes={Array.from(
               new Set(
                 cars
-                  .map((c) => c.make ?? '') // always string
-                  .filter(isString) // ensures type safety
+                  .map((c) => c.make)
+                  .filter(isString) // Type guard: removes undefined/null and ensures string[]
               )
             ).sort()}
           />
