@@ -230,7 +230,13 @@ export default function BuyPage() {
         <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
           <CarFilters
             onFilterChange={handleFilterChange}
-            makes={Array.from(new Set(cars.map((c) => c.make).filter(isString))).sort()}
+            makes={Array.from(
+              new Set(
+                cars
+                  .map((c) => c.make ?? '')   // ensures always a string
+                  .filter(isString)           // narrows type to string
+              )
+            ).sort()}            
           />
         </div>
 
