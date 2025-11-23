@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
-import { Search, SlidersHorizontal, ArrowUpDown } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Search, SlidersHorizontal } from 'lucide-react'
 import CarCard from '@/components/CarCard'
 import CarFilters, { FilterState } from '@/components/CarFilters'
 import { createClientSupabase } from '@/lib/supabase/client'
@@ -11,23 +11,17 @@ import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
 
-type SortOption = 'newest' | 'oldest' | 'price-low' | 'price-high' | 'name-asc' | 'name-desc'
+type SortOption =
+  | 'newest'
+  | 'oldest'
+  | 'price-low'
+  | 'price-high'
+  | 'name-asc'
+  | 'name-desc'
 
-/**
- * Type guard to filter out undefined/null values and ensure array contains only strings
- * This properly narrows the type from (string | undefined)[] to string[]
- */
-const isString = (value: string | undefined | null): value is string => {
-  return typeof value === 'string' && value.length > 0
-}
-
-/**
- * Type guard to filter out undefined/null values and ensure array contains only numbers
- * This properly narrows the type from (number | undefined)[] to number[]
- */
-const isNumber = (value: number | undefined | null): value is number => {
-  return typeof value === 'number' && !isNaN(value)
-}
+// ---------- TYPE GUARDS ----------
+const isString = (value: any): value is string =>
+  typeof value === 'string' && value.trim().length > 0
 
 export default function BuyPage() {
   const supabase = createClientSupabase()
@@ -40,6 +34,7 @@ export default function BuyPage() {
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [showFilters, setShowFilters] = useState(false)
 
+  // ---------- FETCH CARS ----------
   useEffect(() => {
     fetchCars()
   }, [])
@@ -55,11 +50,12 @@ export default function BuyPage() {
 
       setCars(data || [])
       setFilteredCars(data || [])
-      
-      // Extract unique categories using type guard to ensure only strings
+
+      // CATEGORY FIX (ensure string type)
       const uniqueCategories = Array.from(
-        new Set((data || []).map((car) => car.category).filter(isString))
+        new Set((data || []).map((c) => c.category).filter(isString))
       ).sort()
+
       setCategories(uniqueCategories)
     } catch (error) {
       console.error('Error fetching cars:', error)
@@ -69,6 +65,7 @@ export default function BuyPage() {
     }
   }
 
+  // ---------- FILTER LOGIC ----------
   const handleFilterChange = (filters: FilterState) => {
     applyFiltersAndSearch(filters, searchQuery, sortBy)
   }
@@ -88,47 +85,43 @@ export default function BuyPage() {
     query: string,
     sort: SortOption
   ) => {
-    let filtered = [...cars]
+    let result = [...cars]
 
     // Search filter
     if (query.trim()) {
-      const lowerQuery = query.toLowerCase()
-      filtered = filtered.filter(
+      const q = query.toLowerCase()
+      result = result.filter(
         (car) =>
-          car.name?.toLowerCase().includes(lowerQuery) ||
-          car.description?.toLowerCase().includes(lowerQuery) ||
-          car.category?.toLowerCase().includes(lowerQuery)
+          car.name?.toLowerCase().includes(q) ||
+          car.description?.toLowerCase().includes(q) ||
+          car.category?.toLowerCase().includes(q)
       )
     }
 
-    // Apply other filters
-    if (filters.make) {
-      filtered = filtered.filter((car) => car.make === filters.make)
-    }
+    // Apply filters
+    if (filters.make) result = result.filter((c) => c.make === filters.make)
+    if (filters.minPrice)
+      result = result.filter((c) => c.price >= Number(filters.minPrice))
+    if (filters.maxPrice)
+      result = result.filter((c) => c.price <= Number(filters.maxPrice))
+    if (filters.minYear)
+      result = result.filter((c) => c.year && c.year >= Number(filters.minYear))
+    if (filters.maxYear)
+      result = result.filter((c) => c.year && c.year <= Number(filters.maxYear))
 
-    if (filters.minPrice) {
-      filtered = filtered.filter((car) => car.price >= parseFloat(filters.minPrice))
-    }
-
-    if (filters.maxPrice) {
-      filtered = filtered.filter((car) => car.price <= parseFloat(filters.maxPrice))
-    }
-
-    if (filters.minYear) {
-      filtered = filtered.filter((car) => car.year && car.year >= parseInt(filters.minYear))
-    }
-
-    if (filters.maxYear) {
-      filtered = filtered.filter((car) => car.year && car.year <= parseInt(filters.maxYear))
-    }
-
-    // Sort
-    const sorted = [...filtered].sort((a, b) => {
+    // Sorting logic
+    result = result.sort((a, b) => {
       switch (sort) {
         case 'newest':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          return (
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime()
+          )
         case 'oldest':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          return (
+            new Date(a.created_at).getTime() -
+            new Date(b.created_at).getTime()
+          )
         case 'price-low':
           return a.price - b.price
         case 'price-high':
@@ -142,9 +135,10 @@ export default function BuyPage() {
       }
     })
 
-    setFilteredCars(sorted)
+    setFilteredCars(result)
   }
 
+  // ---------- LOADING ----------
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -154,6 +148,7 @@ export default function BuyPage() {
     )
   }
 
+  // ---------- UI ----------
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -163,19 +158,21 @@ export default function BuyPage() {
         </p>
       </div>
 
-      {/* Search and Sort Bar */}
+      {/* Search + Sort */}
       <div className="mb-6 space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
+          {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-              type="text"
-              placeholder="Search by name, description, or category..."
+              placeholder="Search cars..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-10"
             />
           </div>
+
+          {/* Sort */}
           <div className="flex gap-2">
             <Select
               value={sortBy}
@@ -188,65 +185,43 @@ export default function BuyPage() {
               <option value="name-asc">Name: A-Z</option>
               <option value="name-desc">Name: Z-A</option>
             </Select>
+
             <Button
               variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
               className="md:hidden"
+              onClick={() => setShowFilters(!showFilters)}
             >
               <SlidersHorizontal className="h-4 w-4 mr-2" />
               Filters
             </Button>
           </div>
         </div>
-
-        {/* Categories */}
-        {categories.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleSearchChange('')}
-              className={!searchQuery ? 'bg-primary text-primary-foreground' : ''}
-            >
-              All
-            </Button>
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant="outline"
-                size="sm"
-                onClick={() => handleSearchChange(category)}
-                className={searchQuery === category ? 'bg-primary text-primary-foreground' : ''}
-              >
-                {category}
-              </Button>
-            ))}
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Filters Sidebar */}
+        {/* Filters */}
         <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
           <CarFilters
             onFilterChange={handleFilterChange}
             makes={Array.from(
               new Set(
                 cars
-                  .map((c) => c.make ?? '')   // ensures always a string
-                  .filter(isString)           // narrows type to string
+                  .map((c) => c.make ?? '') // always string
+                  .filter(isString) // ensures type safety
               )
-            ).sort()}            
+            ).sort()}
           />
         </div>
 
-        {/* Car Listings */}
+        {/* Cars */}
         <div className="lg:col-span-3">
           {filteredCars.length > 0 ? (
             <>
               <p className="text-sm text-muted-foreground mb-6">
-                Showing {filteredCars.length} car{filteredCars.length !== 1 ? 's' : ''}
+                Showing {filteredCars.length} car
+                {filteredCars.length !== 1 ? 's' : ''}
               </p>
+
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredCars.map((car) => (
                   <CarCard key={car.id} car={car} />
@@ -256,13 +231,16 @@ export default function BuyPage() {
           ) : (
             <div className="text-center py-12">
               <p className="text-lg text-muted-foreground mb-4">
-                No cars found matching your criteria.
+                No cars match your filters.
               </p>
-              <Button variant="outline" onClick={() => {
-                setSearchQuery('')
-                setSortBy('newest')
-                setFilteredCars(cars)
-              }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFilteredCars(cars)
+                  setSearchQuery('')
+                  setSortBy('newest')
+                }}
+              >
                 Clear Filters
               </Button>
             </div>
