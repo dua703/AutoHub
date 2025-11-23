@@ -145,11 +145,9 @@ export default function BuyPage() {
 
   // ---------- MEMOIZED MAKES ARRAY ----------
   // Extract unique makes using type guard to ensure strict string[] type
-  const makes: string[] = useMemo(
-    () =>
-      Array.from(new Set(cars.map((c) => c.make).filter(isString))).sort(),
-    [cars]
-  )
+  const makes: string[] = useMemo(() => {
+    return Array.from(new Set(cars.map((c) => c.make).filter(isString))).sort()
+  }, [cars])
 
   // ---------- LOADING ----------
   if (loading) {
