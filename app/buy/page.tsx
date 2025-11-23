@@ -20,8 +20,13 @@ type SortOption =
   | 'name-desc'
 
 // ---------- TYPE GUARDS ----------
-const isString = (value: any): value is string =>
-  typeof value === 'string' && value.trim().length > 0
+/**
+ * Type guard to filter out undefined/null values and ensure array contains only strings
+ * This properly narrows the type from (string | undefined)[] to string[]
+ */
+const isString = (value: string | undefined | null): value is string => {
+  return typeof value === 'string' && value.trim().length > 0
+}
 
 export default function BuyPage() {
   const supabase = createClientSupabase()
