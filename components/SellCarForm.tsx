@@ -148,8 +148,16 @@ export default function SellCarForm({}: SellCarFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!user) {
+    // Strict authentication check
+    if (!user || !user.id) {
+      alert('You must be logged in to post a car ad.')
       router.push('/login')
+      return
+    }
+
+    // Validate image count
+    if (images.length > 10) {
+      alert('Maximum 10 images allowed. Please remove some images.')
       return
     }
 
@@ -193,7 +201,7 @@ export default function SellCarForm({}: SellCarFormProps) {
         name: title,
       }
 
-      // Insert car into Supabase
+      // Insert car into Supabase with authentication check
       const { data, error } = await supabase
         .from('cars')
         .insert([carData])
@@ -202,11 +210,22 @@ export default function SellCarForm({}: SellCarFormProps) {
 
       if (error) {
         console.error('Supabase error:', error)
+        // Check for authentication errors
+        if (error.code === 'PGRST301' || error.message.includes('permission') || error.message.includes('policy')) {
+          alert('Authentication failed. Please log in again.')
+          router.push('/login')
+          return
+        }
         throw new Error(error.message || 'Failed to save car listing')
       }
 
       if (!data) {
         throw new Error('No data returned from server')
+      }
+
+      // Verify the car was created with correct user_id
+      if (data.user_id !== user.id) {
+        throw new Error('Authentication verification failed')
       }
 
       // Redirect to the new car listing page
@@ -613,16 +632,20 @@ export default function SellCarForm({}: SellCarFormProps) {
         <CardContent className="space-y-4 px-4 sm:px-6">
           <div className="space-y-2">
             <Label className="text-sm sm:text-base">Upload Images (up to 10) *</Label>
-            <div className="w-full">
+            <div className="w-full max-w-full overflow-hidden">
               <UploadButton
                 endpoint="imageUploader"
                 onClientUploadComplete={(res) => {
                   if (res) {
                     const urls = res.map((file) => file.url)
-                    setImages((prev) => {
-                      const newImages = [...prev, ...urls]
-                      return newImages.slice(0, 10) // Limit to 10 images
-                    })
+                    const newImages = [...images, ...urls]
+                    // Limit to 10 images max
+                    if (newImages.length > 10) {
+                      alert('Maximum 10 images allowed. Only the first 10 will be saved.')
+                      setImages(newImages.slice(0, 10))
+                    } else {
+                      setImages(newImages)
+                    }
                     // Clear image error if images are uploaded
                     if (errors.images) {
                       setErrors({
@@ -635,6 +658,7 @@ export default function SellCarForm({}: SellCarFormProps) {
                 onUploadError={(error: Error) => {
                   alert(`Upload failed: ${error.message}`)
                 }}
+                className="w-full ut-button:bg-primary ut-button:text-primary-foreground ut-button:hover:bg-primary/90 ut-allowed-content:text-muted-foreground ut-button:w-full sm:ut-button:w-auto"
               />
             </div>
             {errors.images && (

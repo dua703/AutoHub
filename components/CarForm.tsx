@@ -56,7 +56,9 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!user) {
+    // Strict authentication check
+    if (!user || !user.id) {
+      alert('You must be logged in to post a car ad.')
       router.push('/login')
       return
     }
@@ -78,32 +80,57 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
         name: formData.name,
         price: parseFloat(formData.price),
         description: formData.description,
-        images: images,
+        images: images.slice(0, 10), // Ensure max 10 images
         user_id: user.id,
       }
 
       if (carId) {
-        // Update existing car
+        // Update existing car with authentication check
         const { error } = await supabase
           .from('cars')
           .update(carData)
           .eq('id', carId)
           .eq('user_id', user.id)
 
-        if (error) throw error
+        if (error) {
+          // Check for authentication errors
+          if (error.code === 'PGRST301' || error.message.includes('permission') || error.message.includes('policy')) {
+            alert('Authentication failed. You can only update your own listings.')
+            router.push('/login')
+            return
+          }
+          throw error
+        }
         router.push('/dashboard')
       } else {
-        // Create new car
-        const { error } = await supabase.from('cars').insert([carData])
+        // Create new car with authentication check
+        const { data, error } = await supabase
+          .from('cars')
+          .insert([carData])
+          .select()
+          .single()
 
-        if (error) throw error
+        if (error) {
+          // Check for authentication errors
+          if (error.code === 'PGRST301' || error.message.includes('permission') || error.message.includes('policy')) {
+            alert('Authentication failed. Please log in again.')
+            router.push('/login')
+            return
+          }
+          throw error
+        }
+
+        // Verify the car was created with correct user_id
+        if (data && data.user_id !== user.id) {
+          throw new Error('Authentication verification failed')
+        }
         router.push('/dashboard')
       }
 
       router.refresh()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting car:', error)
-      alert('Error submitting car. Please try again.')
+      alert(error.message || 'Error submitting car. Please try again.')
     } finally {
       setLoading(false)
     }

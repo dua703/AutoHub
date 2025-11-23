@@ -114,19 +114,25 @@ function AdminContent() {
   const handleDeleteCar = async (carId: string) => {
     if (!confirm('Are you sure you want to delete this car?')) return
 
+    // Optimistically remove from UI immediately
+    const previousCars = [...cars]
+    setCars((prev) => prev.filter((car) => car.id !== carId))
+
     try {
       const { error } = await supabase.from('cars').delete().eq('id', carId)
 
-      if (error) throw error
+      if (error) {
+        // Restore on error
+        setCars(previousCars)
+        throw error
+      }
 
-      // Remove from local state immediately for instant UI update
-      setCars((prev) => prev.filter((car) => car.id !== carId))
       toast.success('Car deleted successfully')
       // Refresh data to ensure consistency
       fetchData()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting car:', error)
-      toast.error('Failed to delete car')
+      toast.error(error.message || 'Failed to delete car')
     }
   }
 

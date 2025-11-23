@@ -66,12 +66,16 @@ function DashboardContent() {
   }
 
   /**
-   * Handle car deletion
+   * Handle car deletion with immediate UI update
    */
   const handleDelete = async (carId: string) => {
     if (!confirm('Are you sure you want to delete this car listing?')) {
       return
     }
+
+    // Optimistically remove from UI immediately
+    const previousCars = [...cars]
+    setCars(cars.filter((car) => car.id !== carId))
 
     try {
       const { error } = await supabase
@@ -80,13 +84,17 @@ function DashboardContent() {
         .eq('id', carId)
         .eq('user_id', user?.id)
 
-      if (error) throw error
+      if (error) {
+        // Restore on error
+        setCars(previousCars)
+        throw error
+      }
 
-      // Remove car from state
-      setCars(cars.filter((car) => car.id !== carId))
-    } catch (error) {
+      // Success - car already removed from UI
+      // Real-time subscription will handle sync with other clients
+    } catch (error: any) {
       console.error('Error deleting car:', error)
-      alert('Failed to delete car. Please try again.')
+      alert(error.message || 'Failed to delete car. Please try again.')
     }
   }
 
