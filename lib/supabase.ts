@@ -35,6 +35,7 @@ export interface Car {
   user_id: string
   created_at: string
   updated_at?: string
+  deleted_at?: string // Soft delete timestamp
   // Legacy fields for backward compatibility
   title?: string
   make?: string

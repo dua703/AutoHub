@@ -68,8 +68,8 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
       return
     }
 
-    if (images.length > 10) {
-      alert('Maximum 10 images allowed. Please remove some images.')
+    if (images.length > 5) {
+      alert('Maximum 5 images allowed. Please remove some images.')
       return
     }
 
@@ -80,7 +80,7 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
         name: formData.name,
         price: parseFloat(formData.price),
         description: formData.description,
-        images: images.slice(0, 10), // Ensure max 10 images
+        images: images.slice(0, 5), // Ensure max 5 images
         user_id: user.id,
       }
 
@@ -184,7 +184,7 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label>Images * (Max 10)</Label>
+        <Label>Images * (Max 5)</Label>
         <div className="w-full max-w-full overflow-hidden">
           <UploadButton
             endpoint="imageUploader"
@@ -192,10 +192,10 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
               if (res) {
                 const urls = res.map((file) => file.url)
                 const newImages = [...images, ...urls]
-                // Limit to 10 images max
-                if (newImages.length > 10) {
-                  alert('Maximum 10 images allowed. Only the first 10 will be saved.')
-                  setImages(newImages.slice(0, 10))
+                // Limit to 5 images max
+                if (newImages.length > 5) {
+                  alert('Maximum 5 images allowed. Only the first 5 will be saved.')
+                  setImages(newImages.slice(0, 5))
                 } else {
                   setImages(newImages)
                 }
@@ -210,7 +210,7 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
         {images.length > 0 && (
           <div className="mt-4">
             <p className="text-sm text-muted-foreground mb-2">
-              {images.length} / 10 image(s) uploaded
+              {images.length} / 5 image(s) uploaded
             </p>
             <div className="w-full overflow-x-auto">
               <div className="flex gap-2 min-w-max sm:grid sm:grid-cols-2 md:grid-cols-4 sm:min-w-0">

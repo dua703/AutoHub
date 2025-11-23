@@ -52,6 +52,7 @@ function DashboardContent() {
         .from('cars')
         .select('*')
         .eq('user_id', user.id)
+        .is('deleted_at', null) // Filter out soft-deleted cars
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -78,9 +79,10 @@ function DashboardContent() {
     setCars(cars.filter((car) => car.id !== carId))
 
     try {
+      // Soft delete: set deleted_at timestamp instead of hard delete
       const { error } = await supabase
         .from('cars')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', carId)
         .eq('user_id', user?.id)
 

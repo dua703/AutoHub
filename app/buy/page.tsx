@@ -43,20 +43,27 @@ export default function BuyPage() {
   useEffect(() => {
     fetchCars()
 
-    // Set up real-time subscription for car deletions
+    // Set up real-time subscription for car deletions and updates
     const channel = supabase
       .channel('cars-changes')
       .on(
         'postgres_changes',
         {
-          event: 'DELETE',
+          event: 'UPDATE',
           schema: 'public',
           table: 'cars',
         },
         (payload) => {
-          // Remove deleted car from state immediately
-          setCars((prev) => prev.filter((car) => car.id !== payload.old.id))
-          setFilteredCars((prev) => prev.filter((car) => car.id !== payload.old.id))
+          // Handle soft delete (deleted_at set) or car updates
+          if (payload.new.deleted_at) {
+            // Car was soft-deleted, remove from UI
+            setCars((prev) => prev.filter((car) => car.id !== payload.new.id))
+            setFilteredCars((prev) => prev.filter((car) => car.id !== payload.new.id))
+          } else if (payload.old.deleted_at && !payload.new.deleted_at) {
+            // Car was restored (unlikely but handle it)
+            // Optionally refresh the list
+            fetchCars()
+          }
         }
       )
       .subscribe()
@@ -72,6 +79,7 @@ export default function BuyPage() {
       const { data, error } = await supabase
         .from('cars')
         .select('*')
+        .is('deleted_at', null) // Filter out soft-deleted cars
         .order('created_at', { ascending: false })
 
       if (error) throw error

@@ -9,6 +9,7 @@ async function getCar(id: string): Promise<Car | null> {
     .from('cars')
     .select('*')
     .eq('id', id)
+    .is('deleted_at', null) // Filter out soft-deleted cars
     .single()
 
   if (error || !data) {

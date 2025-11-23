@@ -67,10 +67,11 @@ function AdminContent() {
 
   const fetchData = async () => {
     try {
-      // Fetch all cars
+      // Fetch all cars (excluding soft-deleted)
       const { data: carsData, error: carsError } = await supabase
         .from('cars')
         .select('*')
+        .is('deleted_at', null) // Filter out soft-deleted cars
         .order('created_at', { ascending: false })
         .limit(50)
 
@@ -119,7 +120,11 @@ function AdminContent() {
     setCars((prev) => prev.filter((car) => car.id !== carId))
 
     try {
-      const { error } = await supabase.from('cars').delete().eq('id', carId)
+      // Soft delete: set deleted_at timestamp instead of hard delete
+      const { error } = await supabase
+        .from('cars')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', carId)
 
       if (error) {
         // Restore on error

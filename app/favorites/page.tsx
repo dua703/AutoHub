@@ -55,6 +55,7 @@ function FavoritesContent() {
         .from('cars')
         .select('*')
         .in('id', carIds)
+        .is('deleted_at', null) // Filter out soft-deleted cars
 
       if (carsError) throw carsError
 

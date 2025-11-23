@@ -48,7 +48,8 @@ export default function FavoriteButton({ carId, className }: FavoriteButtonProps
   }
 
   const toggleFavorite = async () => {
-    if (!user) {
+    // Strict authentication check
+    if (!user || !user.id) {
       toast.warning('Please sign in to add favorites')
       return
     }
@@ -57,29 +58,58 @@ export default function FavoriteButton({ carId, className }: FavoriteButtonProps
 
     try {
       if (isFavorite) {
+        // Remove favorite
         const { error } = await supabase
           .from('favorites')
           .delete()
           .eq('user_id', user.id)
           .eq('car_id', carId)
 
-        if (error) throw error
+        if (error) {
+          // Check for authentication errors
+          if (error.code === 'PGRST301' || error.message.includes('permission')) {
+            toast.error('Authentication failed. Please log in again.')
+            return
+          }
+          throw error
+        }
 
         setIsFavorite(false)
         toast.success('Removed from favorites')
       } else {
-        const { error } = await supabase
+        // Add favorite with authentication verification
+        const { data, error } = await supabase
           .from('favorites')
           .insert([{ user_id: user.id, car_id: carId }])
+          .select()
+          .single()
 
-        if (error) throw error
+        if (error) {
+          // Check for authentication errors
+          if (error.code === 'PGRST301' || error.message.includes('permission')) {
+            toast.error('Authentication failed. Please log in again.')
+            return
+          }
+          // Handle duplicate favorite (unique constraint)
+          if (error.code === '23505') {
+            // Already favorited, just update state
+            setIsFavorite(true)
+            return
+          }
+          throw error
+        }
+
+        // Verify the favorite was created with correct user_id
+        if (data && data.user_id !== user.id) {
+          throw new Error('Authentication verification failed')
+        }
 
         setIsFavorite(true)
         toast.success('Added to favorites')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling favorite:', error)
-      toast.error('Failed to update favorite')
+      toast.error(error.message || 'Failed to update favorite')
     } finally {
       setLoading(false)
     }
