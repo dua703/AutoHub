@@ -68,6 +68,7 @@ function DashboardContent() {
 
   /**
    * Handle car deletion with immediate UI update
+   * Removes from database, favorites table, and UI
    */
   const handleDelete = async (carId: string) => {
     if (!confirm('Are you sure you want to delete this car listing?')) {
@@ -79,10 +80,21 @@ function DashboardContent() {
     setCars(cars.filter((car) => car.id !== carId))
 
     try {
-      // Soft delete: set deleted_at timestamp instead of hard delete
+      // First, delete from favorites table (cascade should handle this, but we do it explicitly)
+      const { error: favError } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('car_id', carId)
+
+      if (favError) {
+        console.warn('Error removing from favorites:', favError)
+        // Continue with car deletion even if favorites deletion fails
+      }
+
+      // Hard delete the car (this will cascade to favorites via foreign key)
       const { error } = await supabase
         .from('cars')
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .eq('id', carId)
         .eq('user_id', user?.id)
 
@@ -94,9 +106,12 @@ function DashboardContent() {
 
       // Success - car already removed from UI
       // Real-time subscription will handle sync with other clients
+      router.refresh()
     } catch (error: any) {
       console.error('Error deleting car:', error)
       alert(error.message || 'Failed to delete car. Please try again.')
+      // Restore on error
+      setCars(previousCars)
     }
   }
 

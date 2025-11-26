@@ -17,37 +17,37 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 /**
- * Car interface with all fields
+ * Car interface with all fields matching database schema
  */
 export interface Car {
   id: string
-  name: string
-  price: number
-  description: string
-  images: string[]
-  category?: string
-  mileage?: number
-  fuel_type?: string
-  transmission?: string
-  color?: string
-  condition?: string
-  location?: string
   user_id: string
-  created_at: string
-  updated_at?: string
-  deleted_at?: string // Soft delete timestamp
-  // Legacy fields for backward compatibility
   title?: string
   make?: string
   model?: string
   year?: number
-  // New comprehensive fields
+  mileage?: number
+  transmission?: string
+  engine_capacity?: string
+  fuel_type?: string
+  color?: string
+  condition?: string
+  price: number
+  price_currency?: string // Default: 'PKR'
+  images: string[]
+  body_type?: string
+  created_at: string
+  updated_at?: string
+  deleted_at?: string // Soft delete timestamp
+  // Backward compatibility fields
+  name?: string
+  description?: string
+  category?: string
+  location?: string
   reg_city?: string
   registration_city?: string
   engine_type?: string
-  engine_capacity?: string
   assembly?: string
-  body_type?: string
   exterior_color?: string
   interior_color?: string
   features?: string[]

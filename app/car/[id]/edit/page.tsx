@@ -101,8 +101,8 @@ function EditCarContent({
           initialData={{
             name: car.name || car.title || '',
             price: car.price.toString(),
-            description: car.description,
-            images: car.images,
+            description: car.description || '',
+            images: car.images || [],
           }}
         />
       </div>

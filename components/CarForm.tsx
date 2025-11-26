@@ -68,8 +68,8 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
       return
     }
 
-    if (images.length > 5) {
-      alert('Maximum 5 images allowed. Please remove some images.')
+    if (images.length > 10) {
+      alert('Maximum 10 images allowed. Please remove some images.')
       return
     }
 
@@ -78,9 +78,11 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
     try {
       const carData = {
         name: formData.name,
+        title: formData.name, // Also set title for consistency
         price: parseFloat(formData.price),
+        price_currency: 'PKR', // Always default to PKR
         description: formData.description,
-        images: images.slice(0, 5), // Ensure max 5 images
+        images: images.slice(0, 10), // Ensure max 10 images
         user_id: user.id,
       }
 
@@ -156,7 +158,7 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="price">Price (USD) *</Label>
+        <Label htmlFor="price">Price (PKR) *</Label>
         <Input
           id="price"
           name="price"
@@ -164,9 +166,9 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
           required
           value={formData.price}
           onChange={handleInputChange}
-          placeholder="25000"
+          placeholder="2500000"
           min="0"
-          step="0.01"
+          step="1000"
         />
       </div>
 
@@ -184,7 +186,7 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label>Images * (Max 5)</Label>
+        <Label>Images * (Max 10)</Label>
         <div className="w-full max-w-full overflow-hidden">
           <UploadButton
             endpoint="imageUploader"
@@ -192,10 +194,10 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
               if (res) {
                 const urls = res.map((file) => file.url)
                 const newImages = [...images, ...urls]
-                // Limit to 5 images max
-                if (newImages.length > 5) {
-                  alert('Maximum 5 images allowed. Only the first 5 will be saved.')
-                  setImages(newImages.slice(0, 5))
+                // Limit to 10 images max
+                if (newImages.length > 10) {
+                  alert('Maximum 10 images allowed. Only the first 10 will be saved.')
+                  setImages(newImages.slice(0, 10))
                 } else {
                   setImages(newImages)
                 }
@@ -210,41 +212,39 @@ export default function CarForm({ carId, initialData }: CarFormProps) {
         {images.length > 0 && (
           <div className="mt-4">
             <p className="text-sm text-muted-foreground mb-2">
-              {images.length} / 5 image(s) uploaded
+              {images.length} / 10 image(s) uploaded
             </p>
-            <div className="w-full overflow-x-auto">
-              <div className="flex gap-2 min-w-max sm:grid sm:grid-cols-2 md:grid-cols-4 sm:min-w-0">
-                {images.map((url, index) => (
-                  <div key={index} className="relative group flex-shrink-0 w-20 h-20 sm:w-full sm:h-auto">
-                    <div className="relative h-20 sm:h-24 rounded-md overflow-hidden border">
-                      <img
-                        src={url}
-                        alt={`Upload ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveImage(index)}
-                      className="absolute top-1 right-1 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                      aria-label="Remove image"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </button>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
+              {images.map((url, index) => (
+                <div key={index} className="relative group">
+                  <div className="relative h-20 sm:h-24 rounded-md overflow-hidden border">
+                    <img
+                      src={url}
+                      alt={`Upload ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                ))}
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(index)}
+                    className="absolute top-1 right-1 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 touch-manipulation"
+                    aria-label="Remove image"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}

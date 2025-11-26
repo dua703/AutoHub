@@ -156,8 +156,8 @@ export default function SellCarForm({}: SellCarFormProps) {
     }
 
     // Validate image count
-    if (images.length > 5) {
-      alert('Maximum 5 images allowed. Please remove some images.')
+    if (images.length > 10) {
+      alert('Maximum 10 images allowed. Please remove some images.')
       return
     }
 
@@ -194,8 +194,9 @@ export default function SellCarForm({}: SellCarFormProps) {
         body_type: formData.body_type,
         assembly: formData.assembly,
         price: parseFloat(formData.price),
+        price_currency: 'PKR', // Always default to PKR
         description: formData.description.trim(),
-        images: images,
+        images: images.slice(0, 10), // Limit to 10 images
         user_id: user.id,
         // Also set name for backward compatibility
         name: title,
@@ -631,7 +632,7 @@ export default function SellCarForm({}: SellCarFormProps) {
         </CardHeader>
         <CardContent className="space-y-4 px-4 sm:px-6">
           <div className="space-y-2">
-            <Label className="text-sm sm:text-base">Upload Images (up to 5) *</Label>
+            <Label className="text-sm sm:text-base">Upload Images (up to 10) *</Label>
             <div className="w-full max-w-full overflow-hidden">
               <UploadButton
                 endpoint="imageUploader"
@@ -639,10 +640,10 @@ export default function SellCarForm({}: SellCarFormProps) {
                   if (res) {
                     const urls = res.map((file) => file.url)
                     const newImages = [...images, ...urls]
-                    // Limit to 5 images max
-                    if (newImages.length > 5) {
-                      alert('Maximum 5 images allowed. Only the first 5 will be saved.')
-                      setImages(newImages.slice(0, 5))
+                    // Limit to 10 images max
+                    if (newImages.length > 10) {
+                      alert('Maximum 10 images allowed. Only the first 10 will be saved.')
+                      setImages(newImages.slice(0, 10))
                     } else {
                       setImages(newImages)
                     }
@@ -667,9 +668,9 @@ export default function SellCarForm({}: SellCarFormProps) {
             {images.length > 0 && (
               <div className="mt-4">
                 <p className="text-xs sm:text-sm text-muted-foreground mb-2">
-                  {images.length} / 5 image(s) uploaded
+                  {images.length} / 10 image(s) uploaded
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
                   {images.map((url, index) => (
                     <div key={index} className="relative group">
                       <div className="relative h-24 sm:h-32 rounded-md overflow-hidden border">

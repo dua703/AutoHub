@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Car } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { formatPrice } from '@/lib/utils'
 
 interface CarDetailsClientProps {
   car: Car
@@ -44,7 +45,7 @@ export default function CarDetailsClient({ car }: CarDetailsClientProps) {
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 break-words">{carTitle}</h1>
               <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-4">
-                PKR {car.price.toLocaleString()}
+                {formatPrice(car.price, car.price_currency || 'PKR')}
               </p>
             </div>
             <div className="flex-shrink-0">

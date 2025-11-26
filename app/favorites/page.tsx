@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import ProtectedRoute from '@/components/ProtectedRoute'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { useAuth } from '@/contexts/AuthContext'
 import { createClientSupabase } from '@/lib/supabase/client'
 import { Car, Favorite } from '@/lib/supabase'
@@ -12,14 +12,12 @@ import { Heart } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 
 export default function FavoritesPage() {
-  return (
-    <ProtectedRoute>
-      <FavoritesContent />
-    </ProtectedRoute>
-  )
+  const { loading: authLoading } = useRequireAuth()
+  
+  return <FavoritesContent authLoading={authLoading} />
 }
 
-function FavoritesContent() {
+function FavoritesContent({ authLoading }: { authLoading: boolean }) {
   const { user } = useAuth()
   const supabase = createClientSupabase()
   const toast = useToast()
@@ -27,37 +25,68 @@ function FavoritesContent() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (user) {
+    if (user && !authLoading) {
       fetchFavorites()
     }
-  }, [user])
+  }, [user, authLoading])
 
   const fetchFavorites = async () => {
     if (!user?.id) return
 
     try {
-      const { data: favorites, error: favError } = await supabase
+      // Fetch favorites with car data in a single query using join
+      const { data: favoritesWithCars, error: favError } = await supabase
         .from('favorites')
-        .select('car_id')
+        .select(`
+          car_id,
+          cars (
+            id,
+            title,
+            name,
+            make,
+            model,
+            year,
+            price,
+            price_currency,
+            images,
+            mileage,
+            fuel_type,
+            transmission,
+            color,
+            condition,
+            body_type,
+            description,
+            location,
+            reg_city,
+            registration_city,
+            engine_type,
+            engine_capacity,
+            assembly,
+            category,
+            user_id,
+            created_at,
+            updated_at
+          )
+        `)
         .eq('user_id', user.id)
 
       if (favError) throw favError
 
-      if (!favorites || favorites.length === 0) {
+      if (!favoritesWithCars || favoritesWithCars.length === 0) {
         setFavoriteCars([])
         setLoading(false)
         return
       }
 
-      const carIds = favorites.map((f) => f.car_id)
-
-      const { data: cars, error: carsError } = await supabase
-        .from('cars')
-        .select('*')
-        .in('id', carIds)
-        .is('deleted_at', null) // Filter out soft-deleted cars
-
-      if (carsError) throw carsError
+      // Extract cars from the joined result and filter out soft-deleted cars
+      const cars = favoritesWithCars
+        .map((f: any) => f.cars)
+        .filter((car: Car | null) => {
+          // Filter out null cars and soft-deleted cars
+          if (!car) return false
+          if (car.deleted_at) return false
+          return true
+        }) as Car[]
 
       setFavoriteCars(cars || [])
     } catch (error) {
@@ -68,7 +97,7 @@ function FavoritesContent() {
     }
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>

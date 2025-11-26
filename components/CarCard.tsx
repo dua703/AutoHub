@@ -55,10 +55,7 @@ export default function CarCard({ car }: CarCardProps) {
         )}
         <div className="mt-auto">
           <p className="text-2xl font-bold text-primary">
-            {formatPrice(car.price)}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            PKR {car.price.toLocaleString()}
+            {formatPrice(car.price, car.price_currency || 'PKR')}
           </p>
         </div>
       </CardContent>

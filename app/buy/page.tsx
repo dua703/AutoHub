@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 type SortOption =
   | 'newest'
@@ -29,6 +30,9 @@ const isString = (value: string | undefined | null): value is string => {
 }
 
 export default function BuyPage() {
+  // Require authentication for buy page
+  const { loading: authLoading } = useRequireAuth()
+  
   const supabase = createClientSupabase()
   const toast = useToast()
   const [cars, setCars] = useState<Car[]>([])
@@ -49,6 +53,19 @@ export default function BuyPage() {
       .on(
         'postgres_changes',
         {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'cars',
+        },
+        (payload) => {
+          // Car was hard deleted, remove from UI immediately
+          setCars((prev) => prev.filter((car) => car.id !== payload.old.id))
+          setFilteredCars((prev) => prev.filter((car) => car.id !== payload.old.id))
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
           event: 'UPDATE',
           schema: 'public',
           table: 'cars',
@@ -56,12 +73,12 @@ export default function BuyPage() {
         (payload) => {
           // Handle soft delete (deleted_at set) or car updates
           if (payload.new.deleted_at) {
-            // Car was soft-deleted, remove from UI
+            // Car was soft-deleted, remove from UI immediately
             setCars((prev) => prev.filter((car) => car.id !== payload.new.id))
             setFilteredCars((prev) => prev.filter((car) => car.id !== payload.new.id))
-          } else if (payload.old.deleted_at && !payload.new.deleted_at) {
+          } else if (payload.old?.deleted_at && !payload.new.deleted_at) {
             // Car was restored (unlikely but handle it)
-            // Optionally refresh the list
+            // Refresh the list to show restored car
             fetchCars()
           }
         }
@@ -134,16 +151,34 @@ export default function BuyPage() {
       )
     }
 
-    // Apply filters
-    if (filters.make) result = result.filter((c) => c.make === filters.make)
-    if (filters.minPrice)
-      result = result.filter((c) => c.price >= Number(filters.minPrice))
-    if (filters.maxPrice)
-      result = result.filter((c) => c.price <= Number(filters.maxPrice))
-    if (filters.minYear)
-      result = result.filter((c) => c.year && c.year >= Number(filters.minYear))
-    if (filters.maxYear)
-      result = result.filter((c) => c.year && c.year <= Number(filters.maxYear))
+    // Apply filters with proper type guards
+    if (filters.make && filters.make.trim()) {
+      result = result.filter((c) => c.make === filters.make)
+    }
+    if (filters.minPrice && filters.minPrice.trim()) {
+      const minPrice = Number(filters.minPrice)
+      if (!isNaN(minPrice)) {
+        result = result.filter((c) => c.price >= minPrice)
+      }
+    }
+    if (filters.maxPrice && filters.maxPrice.trim()) {
+      const maxPrice = Number(filters.maxPrice)
+      if (!isNaN(maxPrice)) {
+        result = result.filter((c) => c.price <= maxPrice)
+      }
+    }
+    if (filters.minYear && filters.minYear.trim()) {
+      const minYear = Number(filters.minYear)
+      if (!isNaN(minYear)) {
+        result = result.filter((c) => c.year && c.year >= minYear)
+      }
+    }
+    if (filters.maxYear && filters.maxYear.trim()) {
+      const maxYear = Number(filters.maxYear)
+      if (!isNaN(maxYear)) {
+        result = result.filter((c) => c.year && c.year <= maxYear)
+      }
+    }
 
     // Sorting logic
     result = result.sort((a, b) => {
@@ -181,11 +216,11 @@ export default function BuyPage() {
   }, [cars])
 
   // ---------- LOADING ----------
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-4 text-lg">Loading cars...</p>
+        <p className="mt-4 text-lg">Loading...</p>
       </div>
     )
   }

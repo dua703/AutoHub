@@ -58,7 +58,7 @@ export default function CarFilters({ onFilterChange, makes }: CarFiltersProps) {
           onChange={(e) => handleChange('make', e.target.value)}
         >
           <option value="">All Makes</option>
-          {makes.map((make) => (
+          {makes.filter((make): make is string => typeof make === 'string' && make.trim().length > 0).map((make) => (
             <option key={make} value={make}>
               {make}
             </option>
