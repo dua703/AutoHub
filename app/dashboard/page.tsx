@@ -222,7 +222,7 @@ function DashboardContent() {
                   {/* Action Buttons - Only visible to car owner */}
                   {user?.id === car.user_id && (
                     <div className="flex flex-col sm:flex-row gap-2 mt-auto">
-                      <Link href={`/cars/${car.id}`} className="flex-1">
+                      <Link href={`/car/${car.id}`} className="flex-1">
                         <Button variant="outline" className="w-full h-9 sm:h-10 text-xs sm:text-sm touch-manipulation">
                           View
                         </Button>

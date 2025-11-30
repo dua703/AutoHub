@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Star, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -27,19 +27,20 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
   const [comment, setComment] = useState('')
   const [userReview, setUserReview] = useState<Review | null>(null)
 
-  useEffect(() => {
-    fetchReviews()
-  }, [carId])
-
-  const fetchReviews = async () => {
+  // Memoize fetchReviews to avoid recreating on every render
+  const fetchReviews = useCallback(async () => {
     try {
+      setLoading(true)
       const { data, error } = await supabase
         .from('reviews')
         .select('*, user_profile:user_profiles(full_name, email)')
         .eq('car_id', carId)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching reviews:', error)
+        throw error
+      }
 
       setReviews(data || [])
       
@@ -49,6 +50,10 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
         if (myReview) {
           setRating(myReview.rating)
           setComment(myReview.comment || '')
+        } else {
+          // Reset form if user doesn't have a review
+          setRating(0)
+          setComment('')
         }
       }
     } catch (error) {
@@ -57,12 +62,16 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [carId, supabase, user, toast])
+
+  useEffect(() => {
+    fetchReviews()
+  }, [fetchReviews])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!user) {
+    if (!user || !user.id) {
       toast.warning('Please sign in to leave a review')
       return
     }
@@ -77,28 +86,58 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
     try {
       if (userReview) {
         // Update existing review
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('reviews')
-          .update({ rating, comment: comment || null })
+          .update({ 
+            rating, 
+            comment: comment.trim() || null,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', userReview.id)
+          .eq('user_id', user.id)
+          .select()
+          .single()
 
-        if (error) throw error
-        toast.success('Review updated')
+        if (error) {
+          console.error('Error updating review:', error)
+          throw error
+        }
+        
+        toast.success('Review updated successfully')
+        // Refresh reviews to get updated data
+        await fetchReviews()
       } else {
         // Create new review
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('reviews')
-          .insert([{ car_id: carId, user_id: user.id, rating, comment: comment || null }])
+          .insert([{ 
+            car_id: carId, 
+            user_id: user.id, 
+            rating, 
+            comment: comment.trim() || null 
+          }])
+          .select()
+          .single()
 
-        if (error) throw error
-        toast.success('Review submitted')
+        if (error) {
+          console.error('Error creating review:', error)
+          throw error
+        }
+        
+        toast.success('Review submitted successfully')
+        // Reset form
+        setRating(0)
+        setComment('')
+        // Refresh reviews to get new data
+        await fetchReviews()
       }
-
-      setComment('')
-      fetchReviews()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting review:', error)
-      toast.error('Failed to submit review')
+      // Provide more specific error message
+      const errorMessage = error?.message || 'Failed to submit review'
+      toast.error(errorMessage.includes('permission') || errorMessage.includes('policy') 
+        ? 'You do not have permission to submit reviews. Please check your account status.'
+        : 'Failed to submit review. Please try again.')
     } finally {
       setSubmitting(false)
     }
