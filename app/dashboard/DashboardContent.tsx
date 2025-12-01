@@ -1,25 +1,17 @@
-import type { Metadata } from 'next'
-import ProtectedRoute from '@/components/ProtectedRoute'
-import DashboardContent from './DashboardContent'
+'use client'
 
-export const metadata: Metadata = {
-  title: 'My Dashboard - AutoHub',
-  description: 'Manage your car listings on AutoHub. View, edit, and delete your posted cars.',
-  robots: {
-    index: true,
-    follow: true,
-  },
-}
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
+import { useAuth } from '@/contexts/AuthContext'
+import { createClientSupabase } from '@/lib/supabase/client'
+import { Car } from '@/lib/supabase'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Trash2, Edit, Plus } from 'lucide-react'
 
-export default function DashboardPage() {
-  return (
-    <ProtectedRoute>
-      <DashboardContent />
-    </ProtectedRoute>
-  )
-}
-
-function DashboardContent() {
+export default function DashboardContent() {
   const { user } = useAuth()
   const router = useRouter()
   const supabase = createClientSupabase()
@@ -32,9 +24,6 @@ function DashboardContent() {
     }
   }, [user])
 
-  /**
-   * Fetch user's cars from Supabase
-   */
   const fetchCars = async () => {
     if (!user?.id) return
 
@@ -43,7 +32,7 @@ function DashboardContent() {
         .from('cars')
         .select('*')
         .eq('user_id', user.id)
-        .is('deleted_at', null) // Filter out soft-deleted cars
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -57,21 +46,15 @@ function DashboardContent() {
     }
   }
 
-  /**
-   * Handle car deletion with immediate UI update
-   * Removes from database, favorites table, and UI
-   */
   const handleDelete = async (carId: string) => {
     if (!confirm('Are you sure you want to delete this car listing?')) {
       return
     }
 
-    // Optimistically remove from UI immediately
     const previousCars = [...cars]
     setCars(cars.filter((car) => car.id !== carId))
 
     try {
-      // First, delete from favorites table (cascade should handle this, but we do it explicitly)
       const { error: favError } = await supabase
         .from('favorites')
         .delete()
@@ -79,10 +62,8 @@ function DashboardContent() {
 
       if (favError) {
         console.warn('Error removing from favorites:', favError)
-        // Continue with car deletion even if favorites deletion fails
       }
 
-      // Hard delete the car (this will cascade to favorites via foreign key)
       const { error } = await supabase
         .from('cars')
         .delete()
@@ -90,18 +71,14 @@ function DashboardContent() {
         .eq('user_id', user?.id)
 
       if (error) {
-        // Restore on error
         setCars(previousCars)
         throw error
       }
 
-      // Success - car already removed from UI
-      // Real-time subscription will handle sync with other clients
       router.refresh()
     } catch (error: any) {
       console.error('Error deleting car:', error)
       alert(error.message || 'Failed to delete car. Please try again.')
-      // Restore on error
       setCars(previousCars)
     }
   }
@@ -156,7 +133,6 @@ function DashboardContent() {
                 key={car.id}
                 className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
               >
-                {/* Car Image */}
                 <div className="relative h-48 sm:h-56 w-full bg-gray-200">
                   {mainImage ? (
                     <Image
@@ -173,17 +149,14 @@ function DashboardContent() {
                 </div>
 
                 <CardContent className="p-4 sm:p-5 flex-1 flex flex-col">
-                  {/* Car Title */}
                   <h3 className="font-semibold text-base sm:text-lg mb-2 line-clamp-2">
                     {carTitle}
                   </h3>
 
-                  {/* Price */}
                   <p className="text-xl sm:text-2xl font-bold text-primary mb-3">
                     PKR {car.price.toLocaleString()}
                   </p>
 
-                  {/* Quick Specs */}
                   <div className="space-y-1 mb-3 text-xs sm:text-sm text-muted-foreground">
                     {car.year && car.make && car.model && (
                       <p>{car.year} • {car.make} {car.model}</p>
@@ -205,12 +178,10 @@ function DashboardContent() {
                     )}
                   </div>
 
-                  {/* Description */}
                   <p className="text-xs sm:text-sm text-muted-foreground mb-4 line-clamp-3 flex-1">
                     {car.description || 'No description provided.'}
                   </p>
 
-                  {/* Action Buttons - Only visible to car owner */}
                   {user?.id === car.user_id && (
                     <div className="flex flex-col sm:flex-row gap-2 mt-auto">
                       <Link href={`/car/${car.id}`} className="flex-1">
@@ -243,3 +214,4 @@ function DashboardContent() {
     </div>
   )
 }
+
