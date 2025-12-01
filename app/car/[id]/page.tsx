@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import { createServerSupabase } from '@/lib/supabase/server'
 import { Car } from '@/lib/supabase'
 import CarDetailsClient from '@/components/CarDetailsClient'
@@ -26,6 +27,41 @@ async function getCar(id: string): Promise<Car | null> {
   } catch (error) {
     console.error('Error in getCar:', error)
     return null
+  }
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const car = await getCar(id)
+
+  if (!car) {
+    return {
+      title: 'Car Not Found - AutoHub',
+    }
+  }
+
+  const carTitle = car.title || car.name || 'Car Listing'
+  const description = car.description 
+    ? car.description.substring(0, 160) 
+    : `View details for ${carTitle} on AutoHub`
+
+  return {
+    title: `${carTitle} - AutoHub`,
+    description,
+    openGraph: {
+      title: `${carTitle} - AutoHub`,
+      description,
+      type: 'website',
+      images: car.images && car.images.length > 0 ? [car.images[0]] : [],
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
   }
 }
 

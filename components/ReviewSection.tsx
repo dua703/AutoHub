@@ -31,6 +31,11 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
   const fetchReviews = useCallback(async () => {
     try {
       setLoading(true)
+      
+      if (!supabase) {
+        throw new Error('Database connection not available')
+      }
+
       const { data, error } = await supabase
         .from('reviews')
         .select('*, user_profile:user_profiles(full_name, email)')
@@ -51,14 +56,21 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
           setRating(myReview.rating)
           setComment(myReview.comment || '')
         } else {
-          // Reset form if user doesn't have a review
           setRating(0)
           setComment('')
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching reviews:', error)
-      toast.error('Failed to load reviews')
+      const errorMessage = error?.message || 'Failed to load reviews'
+      
+      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        toast.error('Network error. Please check your connection and try again.')
+      } else if (errorMessage.includes('permission') || errorMessage.includes('policy')) {
+        toast.error('Unable to load reviews. Please refresh the page.')
+      } else {
+        toast.error('Failed to load reviews. Please try again later.')
+      }
     } finally {
       setLoading(false)
     }
@@ -133,11 +145,15 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
       }
     } catch (error: any) {
       console.error('Error submitting review:', error)
-      // Provide more specific error message
       const errorMessage = error?.message || 'Failed to submit review'
-      toast.error(errorMessage.includes('permission') || errorMessage.includes('policy') 
-        ? 'You do not have permission to submit reviews. Please check your account status.'
-        : 'Failed to submit review. Please try again.')
+      
+      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        toast.error('Network error. Please check your connection and try again.')
+      } else if (errorMessage.includes('permission') || errorMessage.includes('policy')) {
+        toast.error('You do not have permission to submit reviews. Please check your account status.')
+      } else {
+        toast.error('Failed to submit review. Please try again.')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -160,9 +176,15 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
       setRating(0)
       setComment('')
       fetchReviews()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting review:', error)
-      toast.error('Failed to delete review')
+      const errorMessage = error?.message || 'Failed to delete review'
+      
+      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        toast.error('Network error. Please check your connection and try again.')
+      } else {
+        toast.error('Failed to delete review. Please try again.')
+      }
     }
   }
 

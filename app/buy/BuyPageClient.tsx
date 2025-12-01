@@ -1,23 +1,16 @@
-import type { Metadata } from 'next'
-import BuyPageClient from './BuyPageClient'
+'use client'
 
-export const metadata: Metadata = {
-  title: 'Buy Cars - AutoHub',
-  description: 'Browse our selection of quality vehicles. Find your perfect car with advanced filters and search.',
-  openGraph: {
-    title: 'Buy Cars - AutoHub',
-    description: 'Browse our selection of quality vehicles. Find your perfect car with advanced filters and search.',
-    type: 'website',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-}
-
-export default function BuyPage() {
-  return <BuyPageClient />
-}
+import { useEffect, useState, useMemo } from 'react'
+import { Search, SlidersHorizontal } from 'lucide-react'
+import CarCard from '@/components/CarCard'
+import CarFilters, { FilterState } from '@/components/CarFilters'
+import { createClientSupabase } from '@/lib/supabase/client'
+import { Car } from '@/lib/supabase'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Select } from '@/components/ui/select'
+import { useToast } from '@/components/ui/toast'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 
 type SortOption =
   | 'newest'
@@ -27,17 +20,11 @@ type SortOption =
   | 'name-asc'
   | 'name-desc'
 
-// ---------- TYPE GUARDS ----------
-/**
- * Type guard to filter out undefined/null values and ensure array contains only strings
- * This properly narrows the type from (string | undefined)[] to string[]
- */
 const isString = (value: string | undefined | null): value is string => {
   return typeof value === 'string' && value.trim().length > 0
 }
 
-export default function BuyPage() {
-  // Require authentication for buy page
+export default function BuyPageClient() {
   const { loading: authLoading } = useRequireAuth()
   
   const supabase = createClientSupabase()
@@ -50,11 +37,9 @@ export default function BuyPage() {
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [showFilters, setShowFilters] = useState(false)
 
-  // ---------- FETCH CARS ----------
   useEffect(() => {
     fetchCars()
 
-    // Set up real-time subscription for car deletions and updates
     const channel = supabase
       .channel('cars-changes')
       .on(
@@ -65,7 +50,6 @@ export default function BuyPage() {
           table: 'cars',
         },
         (payload) => {
-          // Car was hard deleted, remove from UI immediately
           setCars((prev) => prev.filter((car) => car.id !== payload.old.id))
           setFilteredCars((prev) => prev.filter((car) => car.id !== payload.old.id))
         }
@@ -78,21 +62,16 @@ export default function BuyPage() {
           table: 'cars',
         },
         (payload) => {
-          // Handle soft delete (deleted_at set) or car updates
           if (payload.new.deleted_at) {
-            // Car was soft-deleted, remove from UI immediately
             setCars((prev) => prev.filter((car) => car.id !== payload.new.id))
             setFilteredCars((prev) => prev.filter((car) => car.id !== payload.new.id))
           } else if (payload.old?.deleted_at && !payload.new.deleted_at) {
-            // Car was restored (unlikely but handle it)
-            // Refresh the list to show restored car
             fetchCars()
           }
         }
       )
       .subscribe()
 
-    // Cleanup subscription on unmount
     return () => {
       supabase.removeChannel(channel)
     }
@@ -103,7 +82,7 @@ export default function BuyPage() {
       const { data, error } = await supabase
         .from('cars')
         .select('*')
-        .is('deleted_at', null) // Filter out soft-deleted cars
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -111,7 +90,6 @@ export default function BuyPage() {
       setCars(data || [])
       setFilteredCars(data || [])
 
-      // CATEGORY FIX (ensure string type)
       const uniqueCategories = Array.from(
         new Set((data || []).map((c) => c.category).filter(isString))
       ).sort()
@@ -125,7 +103,6 @@ export default function BuyPage() {
     }
   }
 
-  // ---------- FILTER LOGIC ----------
   const handleFilterChange = (filters: FilterState) => {
     applyFiltersAndSearch(filters, searchQuery, sortBy)
   }
@@ -147,7 +124,6 @@ export default function BuyPage() {
   ) => {
     let result = [...cars]
 
-    // Search filter
     if (query.trim()) {
       const q = query.toLowerCase()
       result = result.filter(
@@ -158,7 +134,6 @@ export default function BuyPage() {
       )
     }
 
-    // Apply filters with proper type guards
     if (filters.make && filters.make.trim()) {
       result = result.filter((c) => c.make === filters.make)
     }
@@ -187,7 +162,6 @@ export default function BuyPage() {
       }
     }
 
-    // Sorting logic
     result = result.sort((a, b) => {
       switch (sort) {
         case 'newest':
@@ -216,13 +190,10 @@ export default function BuyPage() {
     setFilteredCars(result)
   }
 
-  // ---------- MEMOIZED MAKES ARRAY ----------
-  // Extract unique makes using type guard to ensure strict string[] type
   const makes: string[] = useMemo(() => {
     return Array.from(new Set(cars.map((c) => c.make).filter(isString))).sort()
   }, [cars])
 
-  // ---------- LOADING ----------
   if (authLoading || loading) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -232,7 +203,6 @@ export default function BuyPage() {
     )
   }
 
-  // ---------- UI ----------
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -242,10 +212,8 @@ export default function BuyPage() {
         </p>
       </div>
 
-      {/* Search + Sort */}
       <div className="mb-6 space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
@@ -256,7 +224,6 @@ export default function BuyPage() {
             />
           </div>
 
-          {/* Sort */}
           <div className="flex gap-2">
             <Select
               value={sortBy}
@@ -283,7 +250,6 @@ export default function BuyPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Filters */}
         <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
           <CarFilters
             onFilterChange={handleFilterChange}
@@ -291,7 +257,6 @@ export default function BuyPage() {
           />
         </div>
 
-        {/* Cars */}
         <div className="lg:col-span-3">
           {filteredCars.length > 0 ? (
             <>
@@ -328,3 +293,4 @@ export default function BuyPage() {
     </div>
   )
 }
+

@@ -1,25 +1,18 @@
-import type { Metadata } from 'next'
-import FavoritesPageClient from './FavoritesPageClient'
+'use client'
 
-export const metadata: Metadata = {
-  title: 'My Favorites - AutoHub',
-  description: 'View and manage your favorite car listings on AutoHub.',
-  openGraph: {
-    title: 'My Favorites - AutoHub',
-    description: 'View and manage your favorite car listings on AutoHub.',
-    type: 'website',
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-}
+import { useEffect, useState } from 'react'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
+import { useAuth } from '@/contexts/AuthContext'
+import { createClientSupabase } from '@/lib/supabase/client'
+import { Car } from '@/lib/supabase'
+import CarCard from '@/components/CarCard'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Heart } from 'lucide-react'
+import { useToast } from '@/components/ui/toast'
 
-export default function FavoritesPage() {
-  return <FavoritesPageClient />
-}
-
-function FavoritesContent({ authLoading }: { authLoading: boolean }) {
+export default function FavoritesPageClient() {
+  const { loading: authLoading } = useRequireAuth()
   const { user } = useAuth()
   const supabase = createClientSupabase()
   const toast = useToast()
@@ -36,7 +29,6 @@ function FavoritesContent({ authLoading }: { authLoading: boolean }) {
     if (!user?.id) return
 
     try {
-      // Fetch favorites with car data in a single query using join
       const { data: favoritesWithCars, error: favError } = await supabase
         .from('favorites')
         .select(`
@@ -80,11 +72,9 @@ function FavoritesContent({ authLoading }: { authLoading: boolean }) {
         return
       }
 
-      // Extract cars from the joined result and filter out soft-deleted cars
       const cars = favoritesWithCars
         .map((f: any) => f.cars)
         .filter((car: Car | null) => {
-          // Filter out null cars and soft-deleted cars
           if (!car) return false
           if (car.deleted_at) return false
           return true
@@ -147,7 +137,4 @@ function FavoritesContent({ authLoading }: { authLoading: boolean }) {
     </div>
   )
 }
-
-
-
 
