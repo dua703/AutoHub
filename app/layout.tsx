@@ -18,6 +18,12 @@ export const metadata: Metadata = {
   description: 'Your trusted marketplace for buying and selling cars',
   keywords: ['cars', 'automotive', 'marketplace', 'buy cars', 'sell cars'],
   authors: [{ name: 'AutoHub' }],
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.png', type: 'image/png' },
+    ],
+  },
   openGraph: {
     title: 'AutoHub - Buy & Sell Cars',
     description: 'Your trusted marketplace for buying and selling cars',
