@@ -4,19 +4,29 @@ import { Car } from '@/lib/supabase'
 import CarDetailsClient from '@/components/CarDetailsClient'
 
 async function getCar(id: string): Promise<Car | null> {
-  const supabase = await createServerSupabase()
-  const { data, error } = await supabase
-    .from('cars')
-    .select('*')
-    .eq('id', id)
-    .is('deleted_at', null) // Filter out soft-deleted cars
-    .single()
-
-  if (error || !data) {
+  if (!id || typeof id !== 'string') {
     return null
   }
 
-  return data
+  try {
+    const supabase = await createServerSupabase()
+    const { data, error } = await supabase
+      .from('cars')
+      .select('*')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .single()
+
+    if (error) {
+      console.error('Error fetching car:', error)
+      return null
+    }
+
+    return data
+  } catch (error) {
+    console.error('Error in getCar:', error)
+    return null
+  }
 }
 
 export default async function CarDetailsPage({
@@ -25,6 +35,11 @@ export default async function CarDetailsPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+  
+  if (!id) {
+    notFound()
+  }
+
   const car = await getCar(id)
 
   if (!car) {
