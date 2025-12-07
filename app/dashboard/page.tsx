@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   title: 'My Dashboard - AutoHub',
   description: 'Manage your car listings on AutoHub. View, edit, and delete your posted cars.',
   robots: {
-    index: true,
-    follow: true,
+    index: false,
+    follow: false,
   },
 }
 

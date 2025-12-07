@@ -13,30 +13,56 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   openGraph: {
     title: 'AutoHub - Buy & Sell Cars in Pakistan',
     description: 'Your trusted marketplace for buying and selling cars in Pakistan.',
     type: 'website',
+    url: 'https://autohubpk.com',
+    siteName: 'AutoHub',
+  },
+  alternates: {
+    canonical: 'https://autohubpk.com',
   },
 }
 
 async function getFeaturedCars(): Promise<Car[]> {
   try {
     const supabase = await createServerSupabase()
-    const { data, error } = await supabase
-      .from('cars')
-      .select('*')
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false })
-      .limit(6)
+    
+    // Add timeout to prevent hanging during crawl
+    const timeoutPromise = new Promise<Car[]>((resolve) => {
+      setTimeout(() => resolve([]), 5000) // 5 second timeout
+    })
+    
+    const fetchPromise = (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('cars')
+          .select('*')
+          .is('deleted_at', null)
+          .order('created_at', { ascending: false })
+          .limit(6)
 
-    if (error) {
-      console.error('Error fetching featured cars:', error)
-      return []
-    }
+        if (error) {
+          console.error('Error fetching featured cars:', error)
+          return []
+        }
+        return data || []
+      } catch (error) {
+        console.error('Error in getFeaturedCars:', error)
+        return []
+      }
+    })()
 
-    return data || []
+    return Promise.race([fetchPromise, timeoutPromise])
   } catch (error) {
     console.error('Error in getFeaturedCars:', error)
     return []

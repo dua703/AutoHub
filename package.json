@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "ensure:supabase": "node scripts/ensure_supabase_schema.js"
+    "ensure:supabase": "node scripts/ensure_supabase_schema.js",
+    "index:google": "node scripts/request-google-indexing.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
