@@ -9,6 +9,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 import { Menu, X } from 'lucide-react'
@@ -22,8 +23,16 @@ export default function Navbar() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 sm:h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="text-lg sm:text-xl md:text-2xl font-bold text-primary">
-            AutoHub
+          <Link href="/" className="flex items-center gap-2 text-lg sm:text-xl md:text-2xl font-bold text-primary hover:opacity-80 transition-opacity">
+            <Image
+              src="/logo-flaming-car.svg"
+              alt="AutoHub Logo"
+              width={32}
+              height={32}
+              className="w-6 h-6 sm:w-8 sm:h-8"
+              priority
+            />
+            <span>AutoHub</span>
           </Link>
 
           {/* Desktop Navigation */}

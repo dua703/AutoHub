@@ -6,10 +6,10 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { createClientSupabase } from '@/lib/supabase/client'
-import { Car } from '@/lib/supabase'
+import { Car, Review } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Trash2, Edit, Plus } from 'lucide-react'
+import { Trash2, Edit, Plus, MessageSquare } from 'lucide-react'
 
 export default function DashboardContent() {
   const { user } = useAuth()
@@ -17,6 +17,7 @@ export default function DashboardContent() {
   const supabase = createClientSupabase()
   const [cars, setCars] = useState<Car[]>([])
   const [loading, setLoading] = useState(true)
+  const [reviewCounts, setReviewCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
     if (user) {
@@ -38,6 +39,23 @@ export default function DashboardContent() {
       if (error) throw error
 
       setCars(data || [])
+      
+      // Fetch review counts for each car
+      if (data && data.length > 0) {
+        const carIds = data.map(car => car.id)
+        const { data: reviewsData, error: reviewsError } = await supabase
+          .from('reviews')
+          .select('car_id')
+          .in('car_id', carIds)
+        
+        if (!reviewsError && reviewsData) {
+          const counts: Record<string, number> = {}
+          reviewsData.forEach((review) => {
+            counts[review.car_id] = (counts[review.car_id] || 0) + 1
+          })
+          setReviewCounts(counts)
+        }
+      }
     } catch (error) {
       console.error('Error fetching cars:', error)
       alert('Failed to load cars. Please try again.')
@@ -149,9 +167,21 @@ export default function DashboardContent() {
                 </div>
 
                 <CardContent className="p-4 sm:p-5 flex-1 flex flex-col">
-                  <h3 className="font-semibold text-base sm:text-lg mb-2 line-clamp-2">
-                    {carTitle}
-                  </h3>
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold text-base sm:text-lg line-clamp-2 flex-1">
+                      {carTitle}
+                    </h3>
+                    {(reviewCounts[car.id] || 0) > 0 && (
+                      <Link 
+                        href={`/car/${car.id}#reviews`}
+                        className="ml-2 flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full hover:bg-primary/20 transition-colors"
+                        title="View reviews"
+                      >
+                        <MessageSquare className="h-3 w-3" />
+                        <span>{reviewCounts[car.id]}</span>
+                      </Link>
+                    )}
+                  </div>
 
                   <p className="text-xl sm:text-2xl font-bold text-primary mb-3">
                     PKR {car.price.toLocaleString()}

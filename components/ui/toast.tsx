@@ -31,13 +31,37 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const showToast = useCallback(
     (message: string, type: Toast['type'] = 'info', duration = 5000) => {
-      const id = Math.random().toString(36).substring(7)
-      const toast: Toast = { id, message, type, duration }
+      // Prevent duplicate error toasts
+      if (type === 'error') {
+        setToasts((prev) => {
+          const hasDuplicate = prev.some(
+            (t) => t.type === 'error' && t.message === message
+          )
+          if (hasDuplicate) {
+            return prev
+          }
+          const id = Math.random().toString(36).substring(7)
+          const toast: Toast = { id, message, type, duration }
+          return [...prev, toast]
+        })
+      } else {
+        const id = Math.random().toString(36).substring(7)
+        const toast: Toast = { id, message, type, duration }
+        setToasts((prev) => [...prev, toast])
+      }
 
-      setToasts((prev) => [...prev, toast])
-
+      // Set timeout for the new toast
       if (duration > 0) {
-        setTimeout(() => removeToast(id), duration)
+        const id = Math.random().toString(36).substring(7)
+        setTimeout(() => {
+          setToasts((prev) => prev.filter((t) => {
+            // Remove by message and type for errors to handle duplicates
+            if (type === 'error') {
+              return !(t.type === 'error' && t.message === message)
+            }
+            return t.id !== id
+          }))
+        }, duration)
       }
     },
     [removeToast]

@@ -21,11 +21,11 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
-      { url: '/favicon.png', type: 'image/png' },
-      { url: '/logo-car-fire.svg', type: 'image/svg+xml' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/logo-flaming-car.svg', type: 'image/svg+xml' },
     ],
     apple: [
-      { url: '/logo-car-fire-512.png', type: 'image/png' },
+      { url: '/logo-flaming-car.svg', type: 'image/svg+xml' },
     ],
   },
   openGraph: {

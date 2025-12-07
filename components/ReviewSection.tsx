@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Star, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -26,67 +26,124 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
   const [userReview, setUserReview] = useState<Review | null>(null)
+  const [hasError, setHasError] = useState(false)
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const errorShownRef = useRef(false)
+  const submittingRef = useRef(false) // Prevent duplicate submissions
 
-  // Memoize fetchReviews to avoid recreating on every render
-  const fetchReviews = useCallback(async () => {
-    try {
-      setLoading(true)
-      
-      if (!supabase) {
-        console.error('Database connection not available')
-        setReviews([])
-        setLoading(false)
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*, user_profile:user_profiles(full_name, email)')
-        .eq('car_id', carId)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching reviews:', error)
-        setReviews([])
-        toast.error('Failed to load reviews. Please try again later.')
-        return
-      }
-
-      setReviews(data || [])
-      
-      if (user) {
-        const myReview = data?.find((r) => r.user_id === user.id)
-        setUserReview(myReview || null)
-        if (myReview) {
-          setRating(myReview.rating)
-          setComment(myReview.comment || '')
-        } else {
-          setRating(0)
-          setComment('')
-        }
-      }
-    } catch (error: any) {
-      console.error('Error fetching reviews:', error)
-      const errorMessage = error?.message || 'Failed to load reviews'
-      
-      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        toast.error('Network error. Please check your connection and try again.')
-      } else if (errorMessage.includes('permission') || errorMessage.includes('policy')) {
-        toast.error('Unable to load reviews. Please refresh the page.')
-      } else {
-        toast.error('Failed to load reviews. Please try again later.')
-      }
-    } finally {
-      setLoading(false)
+  // Debounced fetchReviews with silent error handling
+  const fetchReviews = useCallback(async (showError = false) => {
+    // Clear any pending fetch
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current)
     }
+
+    // Debounce: wait 300ms before fetching
+    fetchTimeoutRef.current = setTimeout(async () => {
+      try {
+        setLoading(true)
+        
+        if (!supabase) {
+          console.error('Database connection not available')
+          setReviews([])
+          setLoading(false)
+          if (showError && !errorShownRef.current) {
+            errorShownRef.current = true
+            toast.error('Database connection not available')
+          }
+          return
+        }
+
+        const { data, error } = await supabase
+          .from('reviews')
+          .select('*, user_profile:user_profiles(full_name, email)')
+          .eq('car_id', carId)
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          console.error('Error fetching reviews:', error)
+          setReviews([])
+          setHasError(true)
+          // Only show error if explicitly requested and not already shown
+          if (showError && !errorShownRef.current) {
+            errorShownRef.current = true
+            toast.error('Failed to load reviews. Please try again later.')
+          }
+          return
+        }
+
+        // Success - reset error state
+        setHasError(false)
+        errorShownRef.current = false
+        setReviews(data || [])
+        
+        if (user) {
+          const myReview = data?.find((r) => r.user_id === user.id)
+          setUserReview(myReview || null)
+          if (myReview) {
+            setRating(myReview.rating)
+            setComment(myReview.comment || myReview.review_text || '')
+          } else {
+            setRating(0)
+            setComment('')
+          }
+        }
+      } catch (error: any) {
+        console.error('Error fetching reviews:', error)
+        setHasError(true)
+        setReviews([])
+        // Only show error if explicitly requested and not already shown
+        if (showError && !errorShownRef.current) {
+          errorShownRef.current = true
+          const errorMessage = error?.message || 'Failed to load reviews'
+          if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+            toast.error('Network error. Please check your connection and try again.')
+          } else if (errorMessage.includes('permission') || errorMessage.includes('policy')) {
+            toast.error('Unable to load reviews. Please refresh the page.')
+          } else {
+            toast.error('Failed to load reviews. Please try again later.')
+          }
+        }
+      } finally {
+        setLoading(false)
+      }
+    }, 300)
   }, [carId, supabase, user, toast])
 
   useEffect(() => {
-    fetchReviews()
-  }, [fetchReviews])
+    // Initial load - silent (no error toast)
+    fetchReviews(false)
+    
+    return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current)
+      }
+    }
+  }, [carId]) // Only depend on carId, not fetchReviews
+
+  // Separate effect for user changes
+  useEffect(() => {
+    if (user && reviews.length > 0) {
+      const myReview = reviews.find((r) => r.user_id === user.id)
+      setUserReview(myReview || null)
+      if (myReview) {
+        setRating(myReview.rating)
+        setComment(myReview.comment || myReview.review_text || '')
+      }
+    } else if (!user) {
+      setUserReview(null)
+      setRating(0)
+      setComment('')
+    }
+  }, [user, reviews])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Prevent duplicate submissions
+    if (submittingRef.current) {
+      return
+    }
 
     if (!user || !user.id) {
       toast.warning('Please sign in to leave a review')
@@ -98,6 +155,7 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
       return
     }
 
+    submittingRef.current = true
     setSubmitting(true)
 
     try {
@@ -113,7 +171,7 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
           })
           .eq('id', userReview.id)
           .eq('user_id', user.id)
-          .select()
+          .select('*, user_profile:user_profiles(full_name, email)')
           .single()
 
         if (error) {
@@ -121,9 +179,16 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
           throw error
         }
         
-        toast.success('Review updated successfully')
-        // Refresh reviews to get updated data
-        await fetchReviews()
+        // Instantly update the review in the list
+        if (data) {
+          setReviews((prev) => 
+            prev.map((r) => r.id === data.id ? data : r)
+          )
+          setUserReview(data)
+        }
+        
+        toast.success('✅ Review updated successfully!')
+        errorShownRef.current = false
       } else {
         // Create new review
         const { data, error } = await supabase
@@ -135,7 +200,7 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
             comment: comment.trim() || null,
             review_text: comment.trim() || null
           }])
-          .select()
+          .select('*, user_profile:user_profiles(full_name, email)')
           .single()
 
         if (error) {
@@ -143,26 +208,28 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
           throw error
         }
         
-        toast.success('Review submitted successfully')
-        // Reset form
+        // Instantly append the new review to the list
+        if (data) {
+          setReviews((prev) => [data, ...prev])
+          setUserReview(data)
+        }
+        
+        toast.success('✅ Review submitted successfully!')
+        
+        // Clear form fields
         setRating(0)
         setComment('')
-        // Refresh reviews to get new data
-        await fetchReviews()
+        errorShownRef.current = false
       }
     } catch (error: any) {
       console.error('Error submitting review:', error)
       const errorMessage = error?.message || 'Failed to submit review'
       
-      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
-        toast.error('Network error. Please check your connection and try again.')
-      } else if (errorMessage.includes('permission') || errorMessage.includes('policy')) {
-        toast.error('You do not have permission to submit reviews. Please check your account status.')
-      } else {
-        toast.error('Failed to submit review. Please try again.')
-      }
+      // Show clear error toast
+      toast.error('❌ Failed to submit review. Please try again.')
     } finally {
       setSubmitting(false)
+      submittingRef.current = false
     }
   }
 
@@ -182,7 +249,8 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
       setUserReview(null)
       setRating(0)
       setComment('')
-      fetchReviews()
+      errorShownRef.current = false
+      fetchReviews(false)
     } catch (error: any) {
       console.error('Error deleting review:', error)
       const errorMessage = error?.message || 'Failed to delete review'
@@ -234,12 +302,13 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
                       key={star}
                       type="button"
                       onClick={() => setRating(star)}
-                      className="focus:outline-none"
+                      disabled={submitting}
+                      className="focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Star
                         className={cn('h-6 w-6 transition-colors', {
                           'fill-yellow-400 text-yellow-400': star <= rating,
-                          'text-gray-300 hover:text-yellow-400': star > rating,
+                          'text-gray-300 hover:text-yellow-400': star > rating && !submitting,
                         })}
                       />
                     </button>
@@ -255,6 +324,7 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Share your experience..."
+                  disabled={submitting}
                 />
               </div>
 
@@ -269,8 +339,12 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
                     Delete
                   </Button>
                 )}
-                <Button type="submit" disabled={submitting} className="flex-1">
-                  {userReview ? 'Update Review' : 'Submit Review'}
+                <Button 
+                  type="submit" 
+                  disabled={submitting || submittingRef.current} 
+                  className="flex-1"
+                >
+                  {submitting ? (userReview ? 'Updating...' : 'Submitting...') : (userReview ? 'Update Review' : 'Submit Review')}
                 </Button>
               </div>
             </form>
@@ -282,7 +356,9 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
         {loading ? (
           <p className="text-muted-foreground">Loading reviews...</p>
         ) : reviews.length === 0 ? (
-          <p className="text-muted-foreground">No reviews yet. Be the first to review!</p>
+          <p className="text-muted-foreground">
+            {hasError ? 'Unable to load reviews.' : 'No reviews yet. Be the first to review!'}
+          </p>
         ) : (
           reviews.map((review) => (
             <Card key={review.id}>
