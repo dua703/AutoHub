@@ -1,21 +1,46 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import CarCard from '@/components/CarCard'
-import { supabase, Car } from '@/lib/supabase'
+import { createServerSupabase } from '@/lib/supabase/server'
+import { Car } from '@/lib/supabase'
+
+export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'AutoHub - Buy & Sell Cars in Pakistan',
+  description: 'Your trusted marketplace for buying and selling cars in Pakistan. Browse quality vehicles or list your car today.',
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: 'AutoHub - Buy & Sell Cars in Pakistan',
+    description: 'Your trusted marketplace for buying and selling cars in Pakistan.',
+    type: 'website',
+  },
+}
 
 async function getFeaturedCars(): Promise<Car[]> {
-  const { data, error } = await supabase
-    .from('cars')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(6)
+  try {
+    const supabase = await createServerSupabase()
+    const { data, error } = await supabase
+      .from('cars')
+      .select('*')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .limit(6)
 
-  if (error) {
-    console.error('Error fetching featured cars:', error)
+    if (error) {
+      console.error('Error fetching featured cars:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Error in getFeaturedCars:', error)
     return []
   }
-
-  return data || []
 }
 
 export default async function Home() {

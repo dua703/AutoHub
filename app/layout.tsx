@@ -20,17 +20,22 @@ export const metadata: Metadata = {
   authors: [{ name: 'AutoHub' }],
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
       { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/logo-car-fire.svg', type: 'image/svg+xml' },
     ],
     apple: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/logo-car-fire-512.png', type: 'image/png' },
     ],
   },
   openGraph: {
     title: 'AutoHub - Buy & Sell Cars',
     description: 'Your trusted marketplace for buying and selling cars',
     type: 'website',
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 }
 

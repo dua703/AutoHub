@@ -231,6 +231,7 @@ export default function SellCarForm({}: SellCarFormProps) {
 
       // Redirect to the new car listing page
       router.push(`/car/${data.id}`)
+      // Revalidate homepage and buy page to show new ad
       router.refresh()
     } catch (error: any) {
       console.error('Error submitting car:', error)

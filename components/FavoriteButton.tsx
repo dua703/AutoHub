@@ -27,7 +27,10 @@ export default function FavoriteButton({ carId, className }: FavoriteButtonProps
   }, [user, carId])
 
   const checkFavorite = async () => {
-    if (!user) return
+    if (!user) {
+      setIsFavorite(false)
+      return
+    }
 
     try {
       const { data, error } = await supabase
@@ -38,12 +41,16 @@ export default function FavoriteButton({ carId, className }: FavoriteButtonProps
         .single()
 
       if (error && error.code !== 'PGRST116') {
-        throw error
+        // PGRST116 is "no rows returned" which is fine
+        console.error('Error checking favorite:', error)
+        setIsFavorite(false)
+        return
       }
 
       setIsFavorite(!!data)
     } catch (error) {
       console.error('Error checking favorite:', error)
+      setIsFavorite(false)
     }
   }
 

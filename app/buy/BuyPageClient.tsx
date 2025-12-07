@@ -10,8 +10,6 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { useToast } from '@/components/ui/toast'
-import { useRequireAuth } from '@/hooks/useRequireAuth'
-
 type SortOption =
   | 'newest'
   | 'oldest'
@@ -24,20 +22,29 @@ const isString = (value: string | undefined | null): value is string => {
   return typeof value === 'string' && value.trim().length > 0
 }
 
-export default function BuyPageClient() {
-  const { loading: authLoading } = useRequireAuth()
-  
+interface BuyPageClientProps {
+  initialCars?: Car[]
+}
+
+export default function BuyPageClient({ initialCars = [] }: BuyPageClientProps) {
   const supabase = createClientSupabase()
   const toast = useToast()
-  const [cars, setCars] = useState<Car[]>([])
-  const [filteredCars, setFilteredCars] = useState<Car[]>([])
+  const [cars, setCars] = useState<Car[]>(initialCars)
+  const [filteredCars, setFilteredCars] = useState<Car[]>(initialCars)
   const [categories, setCategories] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
+    if (initialCars.length > 0) {
+      const uniqueCategories = Array.from(
+        new Set(initialCars.map((c) => c.category).filter(isString))
+      ).sort()
+      setCategories(uniqueCategories)
+      return
+    }
     fetchCars()
 
     const channel = supabase
@@ -194,7 +201,7 @@ export default function BuyPageClient() {
     return Array.from(new Set(cars.map((c) => c.make).filter(isString))).sort()
   }, [cars])
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>

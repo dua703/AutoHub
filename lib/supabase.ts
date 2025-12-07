@@ -74,6 +74,7 @@ export interface Review {
   user_id: string
   rating: number
   comment?: string
+  review_text?: string
   created_at: string
   updated_at?: string
   user_profile?: {

@@ -1,8 +1,23 @@
+import type { Metadata } from 'next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+export const metadata: Metadata = {
+  title: 'Contact Us - AutoHub',
+  description: 'Get in touch with AutoHub. Have questions? We would love to hear from you.',
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: 'Contact Us - AutoHub',
+    description: 'Get in touch with AutoHub. Have questions? We would love to hear from you.',
+    type: 'website',
+  },
+}
 
 export default function ContactPage() {
   return (
@@ -11,7 +26,7 @@ export default function ContactPage() {
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-2">Contact Us</h1>
           <p className="text-muted-foreground">
-            Have questions? We'd love to hear from you.
+            Have questions? We would love to hear from you.
           </p>
         </div>
 

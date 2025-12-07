@@ -33,7 +33,10 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
       setLoading(true)
       
       if (!supabase) {
-        throw new Error('Database connection not available')
+        console.error('Database connection not available')
+        setReviews([])
+        setLoading(false)
+        return
       }
 
       const { data, error } = await supabase
@@ -44,7 +47,9 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
 
       if (error) {
         console.error('Error fetching reviews:', error)
-        throw error
+        setReviews([])
+        toast.error('Failed to load reviews. Please try again later.')
+        return
       }
 
       setReviews(data || [])
@@ -103,6 +108,7 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
           .update({ 
             rating, 
             comment: comment.trim() || null,
+            review_text: comment.trim() || null,
             updated_at: new Date().toISOString()
           })
           .eq('id', userReview.id)
@@ -126,7 +132,8 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
             car_id: carId, 
             user_id: user.id, 
             rating, 
-            comment: comment.trim() || null 
+            comment: comment.trim() || null,
+            review_text: comment.trim() || null
           }])
           .select()
           .single()
@@ -307,9 +314,9 @@ export default function ReviewSection({ carId }: ReviewSectionProps) {
                     </Button>
                   )}
                 </div>
-                {review.comment && (
+                {(review.comment || review.review_text) && (
                   <p className="text-sm text-muted-foreground mt-2">
-                    {review.comment}
+                    {review.comment || review.review_text}
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground mt-2">

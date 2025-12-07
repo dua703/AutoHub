@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="carGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="fireGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Car Body -->
+  <rect x="80" y="240" width="352" height="120" rx="20" fill="url(#carGradient)"/>
+  <rect x="100" y="260" width="312" height="80" rx="15" fill="#ffffff" opacity="0.1"/>
+  
+  <!-- Car Windows -->
+  <rect x="120" y="270" width="140" height="60" rx="8" fill="#ffffff" opacity="0.2"/>
+  <rect x="252" y="270" width="140" height="60" rx="8" fill="#ffffff" opacity="0.2"/>
+  
+  <!-- Car Wheels -->
+  <circle cx="160" cy="360" r="40" fill="#1f2937"/>
+  <circle cx="160" cy="360" r="28" fill="#4b5563"/>
+  <circle cx="160" cy="360" r="16" fill="#6b7280"/>
+  
+  <circle cx="352" cy="360" r="40" fill="#1f2937"/>
+  <circle cx="352" cy="360" r="28" fill="#4b5563"/>
+  <circle cx="352" cy="360" r="16" fill="#6b7280"/>
+  
+  <!-- Car Headlights -->
+  <ellipse cx="432" cy="300" rx="20" ry="15" fill="#fbbf24"/>
+  <ellipse cx="80" cy="300" rx="20" ry="15" fill="#fbbf24"/>
+  
+  <!-- Fire Element -->
+  <path d="M 256 120 L 220 200 L 240 200 L 256 160 L 272 200 L 292 200 Z" fill="url(#fireGradient)"/>
+  <path d="M 256 140 L 230 210 L 246 210 L 256 180 L 266 210 L 282 210 Z" fill="#fbbf24" opacity="0.8"/>
+  <path d="M 256 160 L 240 220 L 250 220 L 256 200 L 262 220 L 272 220 Z" fill="#f59e0b" opacity="0.6"/>
+  
+  <!-- Additional Fire Flames -->
+  <path d="M 236 100 L 210 180 L 228 180 L 236 150 L 244 180 L 260 180 Z" fill="url(#fireGradient)" opacity="0.7"/>
+  <path d="M 276 100 L 250 180 L 268 180 L 276 150 L 284 180 L 300 180 Z" fill="url(#fireGradient)" opacity="0.7"/>
+</svg>
+

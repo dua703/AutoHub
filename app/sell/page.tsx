@@ -1,11 +1,19 @@
-/**
- * Sell Page
- * 
- * Protected route for posting car listings.
- * Fully responsive layout with proper spacing.
- */
-
+import type { Metadata } from 'next'
 import { SellCarFormWithAuth } from '@/components/SellCarForm'
+
+export const metadata: Metadata = {
+  title: 'Sell Your Car - AutoHub',
+  description: 'List your car on AutoHub and reach thousands of potential buyers. Post your car listing today.',
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: 'Sell Your Car - AutoHub',
+    description: 'List your car on AutoHub and reach thousands of potential buyers.',
+    type: 'website',
+  },
+}
 
 export default function SellPage() {
   return (

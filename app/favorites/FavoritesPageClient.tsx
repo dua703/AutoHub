@@ -26,7 +26,11 @@ export default function FavoritesPageClient() {
   }, [user, authLoading])
 
   const fetchFavorites = async () => {
-    if (!user?.id) return
+    if (!user?.id) {
+      setFavoriteCars([])
+      setLoading(false)
+      return
+    }
 
     try {
       const { data: favoritesWithCars, error: favError } = await supabase
@@ -59,12 +63,19 @@ export default function FavoritesPageClient() {
             category,
             user_id,
             created_at,
-            updated_at
+            updated_at,
+            deleted_at
           )
         `)
         .eq('user_id', user.id)
 
-      if (favError) throw favError
+      if (favError) {
+        console.error('Error fetching favorites:', favError)
+        // Return empty array on error instead of throwing
+        setFavoriteCars([])
+        setLoading(false)
+        return
+      }
 
       if (!favoritesWithCars || favoritesWithCars.length === 0) {
         setFavoriteCars([])
@@ -83,6 +94,8 @@ export default function FavoritesPageClient() {
       setFavoriteCars(cars || [])
     } catch (error) {
       console.error('Error fetching favorites:', error)
+      // Return empty array on error
+      setFavoriteCars([])
       toast.error('Failed to load favorites')
     } finally {
       setLoading(false)

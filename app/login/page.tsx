@@ -34,7 +34,7 @@ export default function LoginPage() {
       if (error) throw error
 
       // Redirect to the specified page or dashboard
-      const redirectTo = searchParams.get('redirect') || '/dashboard'
+      const redirectTo = searchParams?.get('redirect') || '/dashboard'
       router.push(redirectTo)
       router.refresh()
     } catch (error: any) {
