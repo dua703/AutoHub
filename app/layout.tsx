@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/Navbar'
@@ -47,6 +48,23 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className={inter.className}>
+        {/* Google tag (gtag.js) - beforeInteractive injects into head */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-HQCMTLY3R6"
+          strategy="beforeInteractive"
+        />
+        <Script
+          id="google-analytics"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-HQCMTLY3R6');
+            `,
+          }}
+        />
         <ErrorBoundary>
           <AuthProvider>
             <ToastProvider>
@@ -64,4 +82,3 @@ export default function RootLayout({
     </html>
   )
 }
-
