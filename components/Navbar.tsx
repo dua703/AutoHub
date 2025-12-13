@@ -25,11 +25,11 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 text-lg sm:text-xl md:text-2xl font-bold text-primary hover:opacity-80 transition-opacity">
             <Image
-              src="/logo-flaming-car.svg"
+              src="/autohub-logo.jpeg"
               alt="AutoHub Logo"
               width={40}
               height={40}
-              className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12"
+              className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 object-contain"
               priority
             />
             <span>AutoHub</span>
