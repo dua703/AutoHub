@@ -59,6 +59,12 @@ CREATE INDEX IF NOT EXISTS idx_cars_make ON cars(make);
 CREATE INDEX IF NOT EXISTS idx_cars_model ON cars(model);
 CREATE INDEX IF NOT EXISTS idx_cars_year ON cars(year);
 CREATE INDEX IF NOT EXISTS idx_cars_price_currency ON cars(price_currency);
+CREATE INDEX IF NOT EXISTS idx_cars_phone ON cars(phone) WHERE phone IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_cars_registration_city ON cars(registration_city) WHERE registration_city IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_cars_transmission ON cars(transmission) WHERE transmission IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_cars_fuel_type ON cars(fuel_type) WHERE fuel_type IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_cars_condition ON cars(condition) WHERE condition IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_cars_assembly ON cars(assembly) WHERE assembly IS NOT NULL;
 
 -- Add comments for documentation
 COMMENT ON COLUMN cars.id IS 'Unique identifier for the car';
@@ -80,6 +86,8 @@ COMMENT ON COLUMN cars.body_type IS 'Body type (Sedan, SUV, Hatchback, etc.)';
 COMMENT ON COLUMN cars.created_at IS 'Timestamp when car was created';
 COMMENT ON COLUMN cars.updated_at IS 'Timestamp when car was last updated';
 COMMENT ON COLUMN cars.deleted_at IS 'Soft delete timestamp (NULL if not deleted)';
+COMMENT ON COLUMN cars.phone IS 'Seller contact phone number (normalized format: +92XXXXXXXXXX)';
+COMMENT ON COLUMN cars.registration_city IS 'City where the car is registered';
 
 -- ============================================
 -- Ensure FAVORITES table has correct structure
@@ -96,6 +104,24 @@ CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_car_id ON favorites(car_id);
 
 -- ============================================
+-- Ensure USER_PROFILES table exists with phone support
+-- ============================================
+CREATE TABLE IF NOT EXISTS user_profiles (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  email TEXT,
+  full_name TEXT,
+  phone TEXT,
+  avatar_url TEXT,
+  is_admin BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+);
+
+-- Create indexes for user_profiles
+CREATE INDEX IF NOT EXISTS idx_user_profiles_phone ON user_profiles(phone) WHERE phone IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_user_profiles_email ON user_profiles(email) WHERE email IS NOT NULL;
+
+-- ============================================
 -- Update RLS policies to handle soft deletes
 -- ============================================
 
@@ -110,6 +136,30 @@ DROP POLICY IF EXISTS "Users can delete their own cars" ON cars;
 CREATE POLICY "Users can delete their own cars" ON cars
   FOR DELETE 
   USING (auth.uid() = user_id);
+
+-- ============================================
+-- RLS Policies for USER_PROFILES
+-- ============================================
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+
+-- Allow public read access to user profiles (for phone lookup during login)
+DROP POLICY IF EXISTS "Allow public read access to profiles" ON user_profiles;
+CREATE POLICY "Allow public read access to profiles" ON user_profiles
+  FOR SELECT 
+  USING (true);
+
+-- Users can update their own profile
+DROP POLICY IF EXISTS "Users can update their own profile" ON user_profiles;
+CREATE POLICY "Users can update their own profile" ON user_profiles
+  FOR UPDATE
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
+
+-- Users can insert their own profile
+DROP POLICY IF EXISTS "Users can insert their own profile" ON user_profiles;
+CREATE POLICY "Users can insert their own profile" ON user_profiles
+  FOR INSERT
+  WITH CHECK (auth.uid() = id);
 
 -- ============================================
 -- Function to handle cascade delete of favorites
