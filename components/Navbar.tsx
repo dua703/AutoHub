@@ -27,9 +27,9 @@ export default function Navbar() {
             <Image
               src="/logo-flaming-car.svg"
               alt="AutoHub Logo"
-              width={32}
-              height={32}
-              className="w-6 h-6 sm:w-8 sm:h-8"
+              width={40}
+              height={40}
+              className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12"
               priority
             />
             <span>AutoHub</span>

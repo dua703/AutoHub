@@ -85,6 +85,7 @@ export default function SellCarForm({}: SellCarFormProps) {
     assembly: '',
     price: '',
     description: '',
+    phone: '',
   })
 
   /**
@@ -105,6 +106,53 @@ export default function SellCarForm({}: SellCarFormProps) {
         [name]: '',
       })
     }
+  }
+
+  /**
+   * Validate phone number format
+   */
+  const validatePhone = (phone: string): boolean => {
+    // Remove all non-digit characters for validation
+    const digits = phone.replace(/\D/g, '')
+    
+    // Pakistani phone number formats:
+    // - 03XX-XXXXXXX (11 digits starting with 0)
+    // - +92-3XX-XXXXXXX (12 digits with country code)
+    // - 92-3XX-XXXXXXX (11 digits without +)
+    // - 3XX-XXXXXXX (10 digits without country code)
+    
+    if (digits.length < 10 || digits.length > 12) {
+      return false
+    }
+    
+    // Should start with 0, 3, or 92
+    if (digits.startsWith('0')) {
+      return digits.length === 11 && digits[1] === '3'
+    } else if (digits.startsWith('92')) {
+      return digits.length === 12 && digits[2] === '3'
+    } else if (digits.startsWith('3')) {
+      return digits.length === 10
+    }
+    
+    return false
+  }
+
+  /**
+   * Normalize phone number for storage
+   */
+  const normalizePhone = (phone: string): string => {
+    const digits = phone.replace(/\D/g, '')
+    
+    // Convert to standard format: +92-3XX-XXXXXXX
+    if (digits.startsWith('0')) {
+      return '+92' + digits.substring(1)
+    } else if (digits.startsWith('92')) {
+      return '+' + digits
+    } else if (digits.startsWith('3')) {
+      return '+92' + digits
+    }
+    
+    return phone // Return as-is if format is unexpected
   }
 
   /**
@@ -135,6 +183,11 @@ export default function SellCarForm({}: SellCarFormProps) {
     }
     if (!formData.description.trim() || formData.description.trim().length < 20) {
       newErrors.description = 'Description must be at least 20 characters'
+    }
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required'
+    } else if (!validatePhone(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number (e.g., 03001234567 or +923001234567)'
     }
     if (images.length === 0) newErrors.images = 'At least one image is required'
 
@@ -196,6 +249,7 @@ export default function SellCarForm({}: SellCarFormProps) {
         price: parseFloat(formData.price),
         price_currency: 'PKR', // Always default to PKR
         description: formData.description.trim(),
+        phone: normalizePhone(formData.phone), // Normalize and store phone number
         images: images.slice(0, 10), // Limit to 10 images
         user_id: user.id,
         // Also set name for backward compatibility
@@ -376,6 +430,26 @@ export default function SellCarForm({}: SellCarFormProps) {
               </Select>
               {errors.registration_city && (
                 <p className="text-xs sm:text-sm text-destructive">{errors.registration_city}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-sm sm:text-base">Phone Number *</Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                required
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="03001234567 or +923001234567"
+                className={`w-full h-10 sm:h-11 text-sm sm:text-base ${errors.phone ? 'border-destructive' : ''}`}
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter your contact number (e.g., 03001234567 or +923001234567)
+              </p>
+              {errors.phone && (
+                <p className="text-xs sm:text-sm text-destructive">{errors.phone}</p>
               )}
             </div>
           </div>
