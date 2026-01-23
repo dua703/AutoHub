@@ -6,11 +6,11 @@ import { Car } from '@/lib/supabase'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Buy Cars - AutoHub',
-  description: 'Browse our selection of quality vehicles. Find your perfect car with advanced filters and search.',
+  title: 'Buy Cars & Bikes - AutoHub',
+  description: 'Browse our selection of quality vehicles. Find your perfect car or bike with advanced filters and search.',
   openGraph: {
-    title: 'Buy Cars - AutoHub',
-    description: 'Browse our selection of quality vehicles. Find your perfect car with advanced filters and search.',
+    title: 'Buy Cars & Bikes - AutoHub',
+    description: 'Browse our selection of quality vehicles. Find your perfect car or bike with advanced filters and search.',
     type: 'website',
     url: 'https://autohubpk.com/buy',
     siteName: 'AutoHub',

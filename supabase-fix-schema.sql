@@ -10,6 +10,7 @@ ALTER TABLE cars
   ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   ADD COLUMN IF NOT EXISTS title TEXT,
+  ADD COLUMN IF NOT EXISTS vehicle_type TEXT DEFAULT 'Car', -- 'Car' or 'Bike'
   ADD COLUMN IF NOT EXISTS make TEXT,
   ADD COLUMN IF NOT EXISTS model TEXT,
   ADD COLUMN IF NOT EXISTS year INTEGER,
@@ -39,7 +40,8 @@ ALTER TABLE cars
   ADD COLUMN IF NOT EXISTS interior_color TEXT,
   ADD COLUMN IF NOT EXISTS features TEXT[] DEFAULT '{}',
   ADD COLUMN IF NOT EXISTS phone TEXT,
-  ADD COLUMN IF NOT EXISTS seller_name TEXT;
+  ADD COLUMN IF NOT EXISTS seller_name TEXT,
+  ADD COLUMN IF NOT EXISTS whatsapp_enabled BOOLEAN DEFAULT false;
 
 -- Set default value for price_currency on existing rows
 UPDATE cars SET price_currency = 'PKR' WHERE price_currency IS NULL;
@@ -65,6 +67,8 @@ CREATE INDEX IF NOT EXISTS idx_cars_transmission ON cars(transmission) WHERE tra
 CREATE INDEX IF NOT EXISTS idx_cars_fuel_type ON cars(fuel_type) WHERE fuel_type IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_cars_condition ON cars(condition) WHERE condition IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_cars_assembly ON cars(assembly) WHERE assembly IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_cars_vehicle_type ON cars(vehicle_type) WHERE vehicle_type IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_cars_location ON cars(location) WHERE location IS NOT NULL;
 
 -- Add comments for documentation
 COMMENT ON COLUMN cars.id IS 'Unique identifier for the car';
@@ -88,6 +92,9 @@ COMMENT ON COLUMN cars.updated_at IS 'Timestamp when car was last updated';
 COMMENT ON COLUMN cars.deleted_at IS 'Soft delete timestamp (NULL if not deleted)';
 COMMENT ON COLUMN cars.phone IS 'Seller contact phone number (normalized format: +92XXXXXXXXXX)';
 COMMENT ON COLUMN cars.registration_city IS 'City where the car is registered';
+COMMENT ON COLUMN cars.vehicle_type IS 'Type of vehicle: Car or Bike';
+COMMENT ON COLUMN cars.location IS 'Seller location/city/area';
+COMMENT ON COLUMN cars.whatsapp_enabled IS 'Whether seller wants WhatsApp contact button enabled';
 
 -- ============================================
 -- Ensure FAVORITES table has correct structure

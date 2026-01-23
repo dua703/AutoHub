@@ -141,6 +141,9 @@ export default function BuyPageClient({ initialCars = [] }: BuyPageClientProps) 
       )
     }
 
+    if (filters.vehicle_type && filters.vehicle_type.trim()) {
+      result = result.filter((c) => c.vehicle_type === filters.vehicle_type)
+    }
     if (filters.make && filters.make.trim()) {
       result = result.filter((c) => c.make === filters.make)
     }
@@ -213,7 +216,7 @@ export default function BuyPageClient({ initialCars = [] }: BuyPageClientProps) 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Buy a Car</h1>
+        <h1 className="text-4xl font-bold mb-2">Buy Cars & Bikes</h1>
         <p className="text-muted-foreground">
           Browse our selection of quality vehicles
         </p>
@@ -224,7 +227,7 @@ export default function BuyPageClient({ initialCars = [] }: BuyPageClientProps) 
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-              placeholder="Search cars..."
+              placeholder="Search cars and bikes..."
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-10"
@@ -268,7 +271,7 @@ export default function BuyPageClient({ initialCars = [] }: BuyPageClientProps) 
           {filteredCars.length > 0 ? (
             <>
               <p className="text-sm text-muted-foreground mb-6">
-                Showing {filteredCars.length} car
+                Showing {filteredCars.length} vehicle
                 {filteredCars.length !== 1 ? 's' : ''}
               </p>
 
@@ -281,7 +284,7 @@ export default function BuyPageClient({ initialCars = [] }: BuyPageClientProps) 
           ) : (
             <div className="text-center py-12">
               <p className="text-lg text-muted-foreground mb-4">
-                No cars match your filters.
+                No vehicles match your filters.
               </p>
               <Button
                 variant="outline"

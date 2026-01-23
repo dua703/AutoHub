@@ -188,26 +188,87 @@ export default function CarDetailsClient({ car }: CarDetailsClientProps) {
                     <span className="text-xs sm:text-sm font-semibold text-right">{car.registration_city || car.reg_city}</span>
                   </div>
                 )}
+                {car.location && (
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-xs sm:text-sm text-muted-foreground">Location</span>
+                    <span className="text-xs sm:text-sm font-semibold text-right">{car.location}</span>
+                  </div>
+                )}
+                {car.vehicle_type && (
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-xs sm:text-sm text-muted-foreground">Vehicle Type</span>
+                    <span className="text-xs sm:text-sm font-semibold text-right">{car.vehicle_type}</span>
+                  </div>
+                )}
+                {car.seller_name && (
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-xs sm:text-sm text-muted-foreground">Seller Name</span>
+                    <span className="text-xs sm:text-sm font-semibold text-right">{car.seller_name}</span>
+                  </div>
+                )}
+                {car.phone && (
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-xs sm:text-sm text-muted-foreground">Contact</span>
+                    <span className="text-xs sm:text-sm font-semibold text-right">{car.phone}</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
 
+          {/* Features Section */}
+          {car.features && car.features.length > 0 && (
+            <Card>
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-base sm:text-lg">Features</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 sm:px-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+                  {car.features.map((feature, index) => (
+                    <div key={index} className="flex items-center gap-2 text-xs sm:text-sm">
+                      <span className="text-green-600">✓</span>
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            <Button
-              size="lg"
-              className="flex-1 h-11 sm:h-12 text-sm sm:text-base touch-manipulation"
-              onClick={() => setShowContactModal(true)}
-              disabled={user?.id === car.user_id}
-            >
-              {user?.id === car.user_id ? 'Your Listing' : 'Contact Seller'}
-            </Button>
-            {user?.id === car.user_id && (
+            {user?.id === car.user_id ? (
               <Link href={`/car/${car.id}/edit`} className="flex-1">
                 <Button size="lg" variant="outline" className="w-full h-11 sm:h-12 text-sm sm:text-base touch-manipulation">
                   Edit Listing
                 </Button>
               </Link>
+            ) : (
+              <>
+                <Button
+                  size="lg"
+                  className="flex-1 h-11 sm:h-12 text-sm sm:text-base touch-manipulation"
+                  onClick={() => setShowContactModal(true)}
+                >
+                  Contact Seller
+                </Button>
+                {car.whatsapp_enabled && car.phone && (
+                  <a
+                    href={`https://wa.me/${car.phone.replace(/[^0-9]/g, '')}?text=Hi, I'm interested in your ${car.vehicle_type || 'vehicle'}: ${carTitle}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1"
+                  >
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="w-full h-11 sm:h-12 text-sm sm:text-base touch-manipulation bg-green-600 hover:bg-green-700 text-white border-green-600"
+                    >
+                      WhatsApp
+                    </Button>
+                  </a>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -12,6 +12,7 @@ interface CarFiltersProps {
 }
 
 export interface FilterState {
+  vehicle_type?: string
   make: string
   minPrice: string
   maxPrice: string
@@ -21,6 +22,7 @@ export interface FilterState {
 
 export default function CarFilters({ onFilterChange, makes }: CarFiltersProps) {
   const [filters, setFilters] = useState<FilterState>({
+    vehicle_type: '',
     make: '',
     minPrice: '',
     maxPrice: '',
@@ -50,6 +52,19 @@ export default function CarFilters({ onFilterChange, makes }: CarFiltersProps) {
     <div className="bg-white p-6 rounded-lg border space-y-4">
       <h3 className="text-lg font-semibold mb-4">Filters</h3>
       
+      <div className="space-y-2">
+        <Label htmlFor="vehicle_type">Vehicle Type</Label>
+        <Select
+          id="vehicle_type"
+          value={filters.vehicle_type || ''}
+          onChange={(e) => handleChange('vehicle_type', e.target.value)}
+        >
+          <option value="">All Vehicles</option>
+          <option value="Car">Cars</option>
+          <option value="Bike">Bikes</option>
+        </Select>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="make">Make</Label>
         <Select

@@ -21,14 +21,17 @@ export const metadata: Metadata = {
   authors: [{ name: 'AutoHub' }],
   icons: {
     icon: [
-      { url: '/autohub-logo.jpeg', sizes: 'any', type: 'image/jpeg' },
       { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+      { url: '/autohub-logo.jpeg', sizes: '512x512', type: 'image/jpeg' },
     ],
     apple: [
-      { url: '/autohub-logo.jpeg', type: 'image/jpeg' },
+      { url: '/apple-touch-icon.png', sizes: '192x192', type: 'image/png' },
     ],
     shortcut: [
-      { url: '/autohub-logo.jpeg', type: 'image/jpeg' },
+      { url: '/favicon.ico', sizes: 'any' },
     ],
   },
   openGraph: {

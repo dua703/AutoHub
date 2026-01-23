@@ -10,7 +10,7 @@
  * Saves to Supabase and redirects to car detail page.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { UploadButton } from '@/lib/uploadthing'
 import { Button } from '@/components/ui/button'
@@ -19,9 +19,11 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
 import { createClientSupabase } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import ProtectedRoute from '@/components/ProtectedRoute'
+import { numberToWords } from '@/lib/utils'
 
 // Pakistani car makes
 const CAR_MAKES = [
@@ -29,6 +31,13 @@ const CAR_MAKES = [
   'Hyundai', 'Kia', 'Mercedes-Benz', 'BMW', 'Audi', 'Volkswagen',
   'Ford', 'Chevrolet', 'Mazda', 'Subaru', 'Lexus', 'Porsche',
   'Land Rover', 'Jeep', 'Other'
+]
+
+// Pakistani bike makes
+const BIKE_MAKES = [
+  'Honda', 'Yamaha', 'Suzuki', 'Kawasaki', 'United', 'Ravi',
+  'Qingqi', 'Super Power', 'Ravi', 'Super Star', 'Road Prince',
+  'Unique', 'Super Asia', 'Pak Hero', 'Other'
 ]
 
 // Pakistani cities for registration
@@ -40,18 +49,61 @@ const REGISTRATION_CITIES = [
   'Other'
 ]
 
-// Engine capacities
+// Engine capacities (for cars and bikes)
 const ENGINE_CAPACITIES = [
+  '70cc', '100cc', '125cc', '150cc', '200cc', '250cc', '300cc', '350cc', '400cc', '500cc', '650cc',
   '660cc', '800cc', '1000cc', '1200cc', '1300cc', '1500cc',
   '1600cc', '1800cc', '2000cc', '2200cc', '2400cc', '2500cc',
   '3000cc', '3500cc', '4000cc', '4500cc', '5000cc', 'Other'
 ]
 
-// Body types
-const BODY_TYPES = [
+// Standard engine types
+const ENGINE_TYPES = [
+  'Inline-3', 'Inline-4', 'Inline-5', 'Inline-6',
+  'V4', 'V6', 'V8', 'V10', 'V12',
+  'Flat-4 (Boxer)', 'Flat-6 (Boxer)',
+  'W8', 'W12',
+  'Rotary (Wankel)',
+  'Single Cylinder', 'Twin Cylinder', 'Triple Cylinder',
+  'Other'
+]
+
+// Body types (for cars)
+const CAR_BODY_TYPES = [
   'Sedan', 'Hatchback', 'SUV', 'Crossover', 'Coupe', 'Convertible',
   'Wagon', 'Van', 'Pickup', 'Truck', 'Other'
 ]
+
+// Bike types
+const BIKE_TYPES = [
+  'Standard', 'Sports', 'Cruiser', 'Touring', 'Adventure', 'Naked',
+  'Scooter', 'Moped', 'Electric', 'Other'
+]
+
+// Common vehicle features (PakWheels-style)
+const ALL_FEATURES = [
+  'ABS', 'Airbags', 'Power Steering', 'Power Windows', 'Power Mirrors',
+  'Central Locking', 'Keyless Entry', 'Sunroof', 'Leather Seats',
+  'Alloy Wheels', 'Fog Lights', 'Rear Camera', 'Parking Sensors',
+  'Cruise Control', 'Climate Control', 'Touchscreen Display',
+  'Bluetooth', 'USB Port', 'Navigation System', 'Sound System',
+  'Third Row Seating', 'Roof Rails', 'Running Boards', 'Spoiler',
+  'LED Headlights', 'Daytime Running Lights', 'Auto Headlights',
+  'Rain Sensing Wipers', 'Auto Dimming Mirror', 'Memory Seats',
+  'Heated Seats', 'Cooled Seats', 'Wireless Charging', '360 Camera'
+]
+
+// Features auto-selected based on model (PakWheels-style)
+const MODEL_FEATURES: Record<string, string[]> = {
+  'Mehran': ['Power Steering', 'Power Windows', 'Central Locking'],
+  'Cultus': ['Power Steering', 'Power Windows', 'Central Locking', 'Airbags'],
+  'Alto': ['Power Steering', 'Power Windows', 'Central Locking'],
+  'Swift': ['Power Steering', 'Power Windows', 'Central Locking', 'Airbags', 'ABS'],
+  'Corolla': ['Power Steering', 'Power Windows', 'Central Locking', 'Airbags', 'ABS', 'Alloy Wheels'],
+  'Civic': ['Power Steering', 'Power Windows', 'Central Locking', 'Airbags', 'ABS', 'Alloy Wheels', 'Sunroof'],
+  'City': ['Power Steering', 'Power Windows', 'Central Locking', 'Airbags', 'ABS'],
+  // Add more as needed
+}
 
 // Colors
 const COLORS = [
@@ -70,6 +122,7 @@ export default function SellCarForm({}: SellCarFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   
   const [formData, setFormData] = useState({
+    vehicle_type: 'Car',
     make: '',
     model: '',
     year: '',
@@ -80,13 +133,17 @@ export default function SellCarForm({}: SellCarFormProps) {
     color: '',
     condition: '',
     registration_city: '',
+    location: '',
     engine_type: '',
     body_type: '',
     assembly: '',
     price: '',
     description: '',
     phone: '',
+    seller_name: '',
+    whatsapp_enabled: false,
   })
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([])
 
   /**
    * Handle input changes and clear errors
@@ -94,11 +151,38 @@ export default function SellCarForm({}: SellCarFormProps) {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target
-    setFormData({
-      ...formData,
-      [name]: value,
-    })
+    const { name, value, type } = e.target
+    const checked = (e.target as HTMLInputElement).checked
+    
+    // Handle checkbox inputs
+    if (type === 'checkbox') {
+      setFormData({
+        ...formData,
+        [name]: checked,
+      })
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      })
+      
+      // Auto-select features when model changes
+      if (name === 'model' && value) {
+        const autoFeatures = MODEL_FEATURES[value] || []
+        setSelectedFeatures(autoFeatures)
+      }
+      
+      // Reset model when vehicle type or make changes
+      if (name === 'vehicle_type' || name === 'make') {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          model: '', // Reset model
+        }))
+        setSelectedFeatures([]) // Reset features
+      }
+    }
+    
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors({
@@ -106,6 +190,17 @@ export default function SellCarForm({}: SellCarFormProps) {
         [name]: '',
       })
     }
+  }
+  
+  /**
+   * Handle feature checkbox toggle
+   */
+  const handleFeatureToggle = (feature: string) => {
+    setSelectedFeatures(prev => 
+      prev.includes(feature)
+        ? prev.filter(f => f !== feature)
+        : [...prev, feature]
+    )
   }
 
   /**
@@ -175,8 +270,10 @@ export default function SellCarForm({}: SellCarFormProps) {
     if (!formData.color) newErrors.color = 'Color is required'
     if (!formData.condition) newErrors.condition = 'Condition is required'
     if (!formData.registration_city) newErrors.registration_city = 'Registration city is required'
-    if (!formData.engine_type.trim()) newErrors.engine_type = 'Engine type is required'
+    if (!formData.location?.trim()) newErrors.location = 'Location is required'
+    if (!formData.engine_type) newErrors.engine_type = 'Engine type is required'
     if (!formData.body_type) newErrors.body_type = 'Body type is required'
+    if (!formData.seller_name?.trim()) newErrors.seller_name = 'Seller name is required'
     if (!formData.assembly) newErrors.assembly = 'Assembly is required'
     if (!formData.price || parseFloat(formData.price) <= 0) {
       newErrors.price = 'Please enter a valid price'
@@ -230,9 +327,10 @@ export default function SellCarForm({}: SellCarFormProps) {
       // Auto-generate title as "Year Make Model"
       const title = `${formData.year} ${formData.make} ${formData.model}`.trim()
 
-      // Prepare car data for Supabase
-      const carData = {
+      // Prepare vehicle data for Supabase
+      const vehicleData = {
         title: title,
+        vehicle_type: formData.vehicle_type,
         make: formData.make,
         model: formData.model,
         year: parseInt(formData.year),
@@ -243,6 +341,7 @@ export default function SellCarForm({}: SellCarFormProps) {
         color: formData.color,
         condition: formData.condition,
         registration_city: formData.registration_city,
+        location: formData.location.trim(),
         engine_type: formData.engine_type,
         body_type: formData.body_type,
         assembly: formData.assembly,
@@ -250,16 +349,19 @@ export default function SellCarForm({}: SellCarFormProps) {
         price_currency: 'PKR', // Always default to PKR
         description: formData.description.trim(),
         phone: normalizePhone(formData.phone), // Normalize and store phone number
+        seller_name: formData.seller_name.trim(),
+        whatsapp_enabled: formData.whatsapp_enabled,
+        features: selectedFeatures, // Array of selected features
         images: images.slice(0, 10), // Limit to 10 images
         user_id: user.id,
         // Also set name for backward compatibility
         name: title,
       }
 
-      // Insert car into Supabase with authentication check
+      // Insert vehicle into Supabase with authentication check
       const { data, error } = await supabase
         .from('cars')
-        .insert([carData])
+        .insert([vehicleData])
         .select()
         .single()
 
@@ -310,29 +412,47 @@ export default function SellCarForm({}: SellCarFormProps) {
   }
 
   /**
-   * Get available models based on selected make
+   * Get available models based on selected make and vehicle type
    */
-  const getModels = (make: string): string[] => {
+  const getModels = (make: string, vehicleType: string): string[] => {
     if (!make) return []
     
-    const commonModels: Record<string, string[]> = {
-      'Toyota': ['Corolla', 'Camry', 'Prius', 'Land Cruiser', 'Hilux', 'Fortuner', 'Vitz', 'Passo', 'Aqua', 'Yaris'],
-      'Honda': ['Civic', 'Accord', 'City', 'CR-V', 'Pilot', 'Fit', 'HR-V'],
-      'Suzuki': ['Mehran', 'Cultus', 'Alto', 'Swift', 'Wagon R', 'Jimny', 'Vitara', 'Bolan', 'Liana'],
-      'Daihatsu': ['Mira', 'Cuore', 'Move', 'Terios', 'Charade'],
-      'Nissan': ['Sunny', 'Sentra', 'Altima', 'X-Trail', 'Patrol', 'March', 'Note'],
-      'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Santa Fe', 'Accent', 'i10', 'i20'],
-      'Kia': ['Sportage', 'Sorento', 'Picanto', 'Rio', 'Cerato', 'Optima'],
-      'Mercedes-Benz': ['C-Class', 'E-Class', 'S-Class', 'GLE', 'GLC', 'A-Class'],
-      'BMW': ['3 Series', '5 Series', '7 Series', 'X3', 'X5', 'X1', 'X7'],
-      'Audi': ['A3', 'A4', 'A6', 'Q5', 'Q7', 'A5', 'Q3'],
-      'Other': []
+    if (vehicleType === 'Bike') {
+      const bikeModels: Record<string, string[]> = {
+        'Honda': ['CD70', 'CD125', 'CG125', 'CB150F', 'CB250F', 'CBR150R', 'CBR250R', 'CBR600RR', 'CBR1000RR'],
+        'Yamaha': ['YBR125', 'YBR250', 'YZF-R15', 'YZF-R3', 'YZF-R6', 'YZF-R1', 'FZ150', 'FZ250'],
+        'Suzuki': ['GD110', 'GS150', 'GSX-R150', 'GSX-R600', 'GSX-R1000', 'Hayabusa'],
+        'Kawasaki': ['Ninja 250', 'Ninja 300', 'Ninja 650', 'Ninja ZX-6R', 'Ninja ZX-10R'],
+        'United': ['United 70', 'United 125', 'United 150'],
+        'Other': []
+      }
+      return bikeModels[make] || []
+    } else {
+      const carModels: Record<string, string[]> = {
+        'Toyota': ['Corolla', 'Camry', 'Prius', 'Land Cruiser', 'Hilux', 'Fortuner', 'Vitz', 'Passo', 'Aqua', 'Yaris'],
+        'Honda': ['Civic', 'Accord', 'City', 'CR-V', 'Pilot', 'Fit', 'HR-V'],
+        'Suzuki': ['Mehran', 'Cultus', 'Alto', 'Swift', 'Wagon R', 'Jimny', 'Vitara', 'Bolan', 'Liana'],
+        'Daihatsu': ['Mira', 'Cuore', 'Move', 'Terios', 'Charade'],
+        'Nissan': ['Sunny', 'Sentra', 'Altima', 'X-Trail', 'Patrol', 'March', 'Note'],
+        'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Santa Fe', 'Accent', 'i10', 'i20'],
+        'Kia': ['Sportage', 'Sorento', 'Picanto', 'Rio', 'Cerato', 'Optima'],
+        'Mercedes-Benz': ['C-Class', 'E-Class', 'S-Class', 'GLE', 'GLC', 'A-Class'],
+        'BMW': ['3 Series', '5 Series', '7 Series', 'X3', 'X5', 'X1', 'X7'],
+        'Audi': ['A3', 'A4', 'A6', 'Q5', 'Q7', 'A5', 'Q3'],
+        'Other': []
+      }
+      return carModels[make] || []
     }
-    
-    return commonModels[make] || []
   }
 
-  const availableModels = getModels(formData.make)
+  const availableModels = getModels(formData.make, formData.vehicle_type)
+  const availableMakes = formData.vehicle_type === 'Bike' ? BIKE_MAKES : CAR_MAKES
+  const availableBodyTypes = formData.vehicle_type === 'Bike' ? BIKE_TYPES : CAR_BODY_TYPES
+  
+  // Calculate price in words
+  const priceInWords = formData.price && !isNaN(parseFloat(formData.price)) && parseFloat(formData.price) > 0
+    ? numberToWords(parseFloat(formData.price))
+    : ''
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
@@ -344,6 +464,24 @@ export default function SellCarForm({}: SellCarFormProps) {
         <CardContent className="space-y-4 px-4 sm:px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
+              <Label htmlFor="vehicle_type" className="text-sm sm:text-base">Vehicle Type *</Label>
+              <Select
+                id="vehicle_type"
+                name="vehicle_type"
+                required
+                value={formData.vehicle_type}
+                onChange={handleInputChange}
+                className={`w-full h-10 sm:h-11 text-sm sm:text-base ${errors.vehicle_type ? 'border-destructive' : ''}`}
+              >
+                <option value="Car">Car</option>
+                <option value="Bike">Bike</option>
+              </Select>
+              {errors.vehicle_type && (
+                <p className="text-xs sm:text-sm text-destructive">{errors.vehicle_type}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="make" className="text-sm sm:text-base">Make *</Label>
               <Select
                 id="make"
@@ -354,7 +492,7 @@ export default function SellCarForm({}: SellCarFormProps) {
                 className={`w-full h-10 sm:h-11 text-sm sm:text-base ${errors.make ? 'border-destructive' : ''}`}
               >
                 <option value="">Select Make</option>
-                {CAR_MAKES.map((make) => (
+                {availableMakes.map((make) => (
                   <option key={make} value={make}>
                     {make}
                   </option>
@@ -434,6 +572,40 @@ export default function SellCarForm({}: SellCarFormProps) {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="location" className="text-sm sm:text-base">Location *</Label>
+              <Input
+                id="location"
+                name="location"
+                type="text"
+                required
+                value={formData.location}
+                onChange={handleInputChange}
+                placeholder="Enter your city/area (e.g., Karachi, Gulshan-e-Iqbal)"
+                className={`w-full h-10 sm:h-11 text-sm sm:text-base ${errors.location ? 'border-destructive' : ''}`}
+              />
+              {errors.location && (
+                <p className="text-xs sm:text-sm text-destructive">{errors.location}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="seller_name" className="text-sm sm:text-base">Your Name *</Label>
+              <Input
+                id="seller_name"
+                name="seller_name"
+                type="text"
+                required
+                value={formData.seller_name}
+                onChange={handleInputChange}
+                placeholder="Enter your full name"
+                className={`w-full h-10 sm:h-11 text-sm sm:text-base ${errors.seller_name ? 'border-destructive' : ''}`}
+              />
+              {errors.seller_name && (
+                <p className="text-xs sm:text-sm text-destructive">{errors.seller_name}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="phone" className="text-sm sm:text-base">Phone Number *</Label>
               <Input
                 id="phone"
@@ -445,6 +617,19 @@ export default function SellCarForm({}: SellCarFormProps) {
                 placeholder="03001234567 or +923001234567"
                 className={`w-full h-10 sm:h-11 text-sm sm:text-base ${errors.phone ? 'border-destructive' : ''}`}
               />
+              <div className="flex items-center space-x-2 mt-2">
+                <input
+                  type="checkbox"
+                  id="whatsapp_enabled"
+                  name="whatsapp_enabled"
+                  checked={formData.whatsapp_enabled}
+                  onChange={handleInputChange}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="whatsapp_enabled" className="text-xs text-muted-foreground cursor-pointer">
+                  Enable WhatsApp contact button
+                </Label>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Enter your contact number (e.g., 03001234567 or +923001234567)
               </p>
@@ -494,6 +679,7 @@ export default function SellCarForm({}: SellCarFormProps) {
                 <option value="">Select Transmission</option>
                 <option value="Automatic">Automatic</option>
                 <option value="Manual">Manual</option>
+                <option value="Semi-Automatic">Semi-Automatic</option>
               </Select>
               {errors.transmission && (
                 <p className="text-xs sm:text-sm text-destructive">{errors.transmission}</p>
@@ -537,6 +723,9 @@ export default function SellCarForm({}: SellCarFormProps) {
                 <option value="Diesel">Diesel</option>
                 <option value="Hybrid">Hybrid</option>
                 <option value="Electric">Electric</option>
+                <option value="CNG">CNG</option>
+                <option value="LPG">LPG</option>
+                <option value="PHEV">PHEV (Plug-in Hybrid)</option>
               </Select>
               {errors.fuel_type && (
                 <p className="text-xs sm:text-sm text-destructive">{errors.fuel_type}</p>
@@ -545,23 +734,28 @@ export default function SellCarForm({}: SellCarFormProps) {
 
             <div className="space-y-2">
               <Label htmlFor="engine_type" className="text-sm sm:text-base">Engine Type *</Label>
-              <Input
+              <Select
                 id="engine_type"
                 name="engine_type"
-                type="text"
                 required
                 value={formData.engine_type}
                 onChange={handleInputChange}
-                placeholder="e.g., 4-Cylinder, V6, V8"
                 className={`w-full h-10 sm:h-11 text-sm sm:text-base ${errors.engine_type ? 'border-destructive' : ''}`}
-              />
+              >
+                <option value="">Select Engine Type</option>
+                {ENGINE_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </Select>
               {errors.engine_type && (
                 <p className="text-xs sm:text-sm text-destructive">{errors.engine_type}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="body_type" className="text-sm sm:text-base">Body Type *</Label>
+              <Label htmlFor="body_type" className="text-sm sm:text-base">{formData.vehicle_type === 'Bike' ? 'Bike Type' : 'Body Type'} *</Label>
               <Select
                 id="body_type"
                 name="body_type"
@@ -570,8 +764,8 @@ export default function SellCarForm({}: SellCarFormProps) {
                 onChange={handleInputChange}
                 className={`w-full h-10 sm:h-11 text-sm sm:text-base ${errors.body_type ? 'border-destructive' : ''}`}
               >
-                <option value="">Select Body Type</option>
-                {BODY_TYPES.map((type) => (
+                <option value="">Select {formData.vehicle_type === 'Bike' ? 'Bike Type' : 'Body Type'}</option>
+                {availableBodyTypes.map((type) => (
                   <option key={type} value={type}>
                     {type}
                   </option>
@@ -665,8 +859,48 @@ export default function SellCarForm({}: SellCarFormProps) {
               step="1000"
               className={`w-full h-10 sm:h-11 text-sm sm:text-base ${errors.price ? 'border-destructive' : ''}`}
             />
+            {priceInWords && (
+              <p className="text-sm font-semibold text-primary mt-1">
+                {priceInWords} Rupees
+              </p>
+            )}
             {errors.price && (
               <p className="text-xs sm:text-sm text-destructive">{errors.price}</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Features Panel Section */}
+      <Card>
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-lg sm:text-xl">Features</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 sm:px-6">
+          <div className="space-y-3">
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Select features available in your {formData.vehicle_type.toLowerCase()}. Features are auto-selected based on your model.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2 border rounded-md">
+              {ALL_FEATURES.map((feature) => (
+                <div key={feature} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={`feature-${feature}`}
+                    checked={selectedFeatures.includes(feature)}
+                    onChange={() => handleFeatureToggle(feature)}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor={`feature-${feature}`} className="text-xs sm:text-sm cursor-pointer">
+                    {feature}
+                  </Label>
+                </div>
+              ))}
+            </div>
+            {selectedFeatures.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {selectedFeatures.length} feature{selectedFeatures.length !== 1 ? 's' : ''} selected
+              </p>
             )}
           </div>
         </CardContent>

@@ -23,6 +23,7 @@ export interface Car {
   id: string
   user_id: string
   title?: string
+  vehicle_type?: string // 'Car' or 'Bike'
   make?: string
   model?: string
   year?: number
@@ -53,6 +54,7 @@ export interface Car {
   features?: string[]
   phone?: string
   seller_name?: string
+  whatsapp_enabled?: boolean
 }
 
 /**

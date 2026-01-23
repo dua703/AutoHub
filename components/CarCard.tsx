@@ -35,9 +35,9 @@ export default function CarCard({ car }: CarCardProps) {
         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <FavoriteButton carId={car.id} />
         </div>
-        {car.category && (
+        {(car.vehicle_type || car.category) && (
           <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
-            {car.category}
+            {car.vehicle_type || car.category}
           </div>
         )}
       </div>
@@ -48,9 +48,9 @@ export default function CarCard({ car }: CarCardProps) {
             {carSubtitle}
           </p>
         )}
-        {(car.reg_city || car.location) && (
+        {(car.reg_city || car.registration_city || car.location) && (
           <p className="text-xs text-muted-foreground mb-2">
-            📍 {car.reg_city || car.location}
+            📍 {car.reg_city || car.registration_city || car.location}
           </p>
         )}
         <div className="mt-auto">
