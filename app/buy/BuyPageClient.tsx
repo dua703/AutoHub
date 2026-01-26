@@ -18,6 +18,8 @@ type SortOption =
   | 'name-asc'
   | 'name-desc'
 
+const BLOCKED_MAKES = new Set(['Ravi', 'Super Power', 'Pakhero', 'Pak Hero'])
+
 const isString = (value: string | undefined | null): value is string => {
   return typeof value === 'string' && value.trim().length > 0
 }
@@ -147,6 +149,10 @@ export default function BuyPageClient({ initialCars = [] }: BuyPageClientProps) 
     if (filters.make && filters.make.trim()) {
       result = result.filter((c) => c.make === filters.make)
     }
+    if (filters.model && filters.model.trim()) {
+      const modelQuery = filters.model.toLowerCase()
+      result = result.filter((c) => (c.model || '').toLowerCase().includes(modelQuery))
+    }
     if (filters.minPrice && filters.minPrice.trim()) {
       const minPrice = Number(filters.minPrice)
       if (!isNaN(minPrice)) {
@@ -201,7 +207,14 @@ export default function BuyPageClient({ initialCars = [] }: BuyPageClientProps) 
   }
 
   const makes: string[] = useMemo(() => {
-    return Array.from(new Set(cars.map((c) => c.make).filter(isString))).sort()
+    return Array.from(
+      new Set(
+        cars
+          .map((c) => c.make)
+          .filter(isString)
+          .filter((make) => !BLOCKED_MAKES.has(make))
+      )
+    ).sort()
   }, [cars])
 
   if (loading) {

@@ -14,6 +14,7 @@ interface CarFiltersProps {
 export interface FilterState {
   vehicle_type?: string
   make: string
+  model: string
   minPrice: string
   maxPrice: string
   minYear: string
@@ -24,6 +25,7 @@ export default function CarFilters({ onFilterChange, makes }: CarFiltersProps) {
   const [filters, setFilters] = useState<FilterState>({
     vehicle_type: '',
     make: '',
+    model: '',
     minPrice: '',
     maxPrice: '',
     minYear: '',
@@ -38,7 +40,9 @@ export default function CarFilters({ onFilterChange, makes }: CarFiltersProps) {
 
   const clearFilters = () => {
     const clearedFilters = {
+      vehicle_type: '',
       make: '',
+      model: '',
       minPrice: '',
       maxPrice: '',
       minYear: '',
@@ -79,6 +83,16 @@ export default function CarFilters({ onFilterChange, makes }: CarFiltersProps) {
             </option>
           ))}
         </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="model">Model</Label>
+        <Input
+          id="model"
+          placeholder="Search model"
+          value={filters.model}
+          onChange={(e) => handleChange('model', e.target.value)}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">

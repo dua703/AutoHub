@@ -35,9 +35,10 @@ const CAR_MAKES = [
 
 // Pakistani bike makes
 const BIKE_MAKES = [
-  'Honda', 'Yamaha', 'Suzuki', 'Kawasaki', 'United', 'Ravi',
-  'Qingqi', 'Super Power', 'Ravi', 'Super Star', 'Road Prince',
-  'Unique', 'Super Asia', 'Pak Hero', 'Other'
+  'Honda', 'Yamaha', 'Suzuki', 'Kawasaki', 'BMW', 'Benelli',
+  'Harley Davidson', 'Ducati', 'KTM', 'High Speed', 'United',
+  'Qingqi', 'Superstar', 'Road Prince', 'Unique', 'Super Asia',
+  'Other'
 ]
 
 // Pakistani cities for registration
@@ -88,9 +89,9 @@ const ALL_FEATURES = [
   'Cruise Control', 'Climate Control', 'Touchscreen Display',
   'Bluetooth', 'USB Port', 'Navigation System', 'Sound System',
   'Third Row Seating', 'Roof Rails', 'Running Boards', 'Spoiler',
-  'LED Headlights', 'Daytime Running Lights', 'Auto Headlights',
+  'LED Headlights', 'DRL (Daytime Running Light)', 'Auto Headlights',
   'Rain Sensing Wipers', 'Auto Dimming Mirror', 'Memory Seats',
-  'Heated Seats', 'Cooled Seats', 'Wireless Charging', '360 Camera'
+  'Heated Seats', 'Cooled Seats', 'Ventilated Seats', 'Wireless Charging', '360 Camera'
 ]
 
 // Features auto-selected based on model (PakWheels-style)
@@ -419,26 +420,46 @@ export default function SellCarForm({}: SellCarFormProps) {
     
     if (vehicleType === 'Bike') {
       const bikeModels: Record<string, string[]> = {
-        'Honda': ['CD70', 'CD125', 'CG125', 'CB150F', 'CB250F', 'CBR150R', 'CBR250R', 'CBR600RR', 'CBR1000RR'],
-        'Yamaha': ['YBR125', 'YBR250', 'YZF-R15', 'YZF-R3', 'YZF-R6', 'YZF-R1', 'FZ150', 'FZ250'],
-        'Suzuki': ['GD110', 'GS150', 'GSX-R150', 'GSX-R600', 'GSX-R1000', 'Hayabusa'],
-        'Kawasaki': ['Ninja 250', 'Ninja 300', 'Ninja 650', 'Ninja ZX-6R', 'Ninja ZX-10R'],
+        'Honda': ['CD70', 'CD125', 'CG125', 'CG150', 'CB150F', 'CB250F', 'CBR150R', 'CBR250R', 'CBR600RR', 'CBR1000RR'],
+        'Yamaha': ['YBZ125', 'YBR125', 'YBR250', 'YZF-R15', 'YZF-R3', 'YZF-R6', 'YZF-R1', 'FZ150', 'FZ250'],
+        'Suzuki': ['GD110', 'GS150', 'GR150', 'GSX-R150', 'GSX-R600', 'GSX-R1000', 'Hayabusa'],
+        'Kawasaki': ['Ninja 250', 'Ninja 300', 'Ninja 650', 'Ninja ZX-6R', 'Ninja ZX-10R', 'Ninja ZX14', 'Ninja 2800', 'Ninja 2900'],
+        'BMW': ['G 310 R', 'G 310 GS', 'S 1000 RR', 'R 1250 GS'],
+        'Benelli': ['TNT 150', 'TNT 300', 'TNT 600i', 'TRK 502'],
+        'Harley Davidson': ['Street 750', 'Iron 883', 'Sportster S', 'Fat Boy'],
+        'Ducati': ['Monster', 'Panigale V2', 'Panigale V4', 'Diavel'],
+        'KTM': ['Duke 200', 'Duke 250', 'Duke 390', 'RC 200', 'RC 390'],
+        'High Speed': ['Infinity 150', 'Freedom 200', 'SR 200'],
         'United': ['United 70', 'United 125', 'United 150'],
+        'Qingqi': ['QM70', 'QM125'],
+        'Superstar': ['70', '125'],
+        'Road Prince': ['70', '125'],
+        'Unique': ['70', '125'],
+        'Super Asia': ['70', '125', '150'],
         'Other': []
       }
       return bikeModels[make] || []
     } else {
       const carModels: Record<string, string[]> = {
-        'Toyota': ['Corolla', 'Camry', 'Prius', 'Land Cruiser', 'Hilux', 'Fortuner', 'Vitz', 'Passo', 'Aqua', 'Yaris'],
-        'Honda': ['Civic', 'Accord', 'City', 'CR-V', 'Pilot', 'Fit', 'HR-V'],
-        'Suzuki': ['Mehran', 'Cultus', 'Alto', 'Swift', 'Wagon R', 'Jimny', 'Vitara', 'Bolan', 'Liana'],
-        'Daihatsu': ['Mira', 'Cuore', 'Move', 'Terios', 'Charade'],
-        'Nissan': ['Sunny', 'Sentra', 'Altima', 'X-Trail', 'Patrol', 'March', 'Note'],
-        'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Santa Fe', 'Accent', 'i10', 'i20'],
-        'Kia': ['Sportage', 'Sorento', 'Picanto', 'Rio', 'Cerato', 'Optima'],
-        'Mercedes-Benz': ['C-Class', 'E-Class', 'S-Class', 'GLE', 'GLC', 'A-Class'],
+        'Toyota': ['Corolla', 'Camry', 'Prius', 'Land Cruiser', 'Hilux', 'Fortuner', 'Vitz', 'Passo', 'Aqua', 'Yaris', 'Axio', 'Harrier', 'Mark X', 'Crown', 'LC200', 'LC250', 'LC300', 'Premio', 'Raize'],
+        'Honda': ['Civic', 'Accord', 'City', 'CR-V', 'Pilot', 'Fit', 'HR-V', 'N-Box'],
+        'Suzuki': ['Mehran', 'Cultus', 'Alto', 'Swift', 'Wagon R', 'Jimny', 'Vitara', 'Bolan', 'Liana', 'Baleno'],
+        'Daihatsu': ['Mira', 'Cuore', 'Move', 'Terios', 'Charade', 'Rocky', 'Pleo', 'Taft', 'Tanto'],
+        'Nissan': ['Sunny', 'Sentra', 'Altima', 'X-Trail', 'Patrol', 'March', 'Note', 'GTR'],
+        'Mitsubishi': ['Lancer', 'Pajero', 'Outlander', 'Mirage'],
+        'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Santa Fe', 'Accent', 'i10', 'i20', 'Ioniq 6', 'Santro', 'Shahroze'],
+        'Kia': ['Sportage', 'Sorento', 'Picanto', 'Rio', 'Cerato', 'Optima', 'Grand Carnival'],
+        'Mercedes-Benz': ['C-Class', 'E-Class', 'S-Class', 'GLE', 'GLC', 'A-Class', 'G-Class'],
         'BMW': ['3 Series', '5 Series', '7 Series', 'X3', 'X5', 'X1', 'X7'],
-        'Audi': ['A3', 'A4', 'A6', 'Q5', 'Q7', 'A5', 'Q3'],
+        'Audi': ['A3', 'A4', 'A6', 'Q5', 'Q7', 'A5', 'Q3', 'e-tron', 'e-tron GT', 'R8'],
+        'Volkswagen': ['Golf', 'Passat', 'Polo', 'Tiguan'],
+        'Chevrolet': ['Cruze', 'Malibu', 'Tahoe', 'Camaro'],
+        'Mazda': ['Mazda2', 'Mazda3', 'Mazda6', 'CX-5'],
+        'Subaru': ['Impreza', 'Legacy', 'Forester', 'Outback'],
+        'Lexus': ['IS', 'ES', 'RX', 'LX'],
+        'Porsche': ['911', 'Cayenne', 'Macan', 'Panamera'],
+        'Land Rover': ['Range Rover', 'Range Rover Sport', 'Defender', 'Discovery'],
+        'Jeep': ['Wrangler', 'Cherokee', 'Grand Cherokee', 'Compass'],
         'Other': []
       }
       return carModels[make] || []
