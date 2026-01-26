@@ -62,6 +62,7 @@ const ENGINE_CAPACITIES = [
 const ENGINE_TYPES = [
   'Inline-3', 'Inline-4', 'Inline-5', 'Inline-6',
   'V4', 'V6', 'V8', 'V10', 'V12',
+  'Flat-2 (Boxer)',
   'Flat-4 (Boxer)', 'Flat-6 (Boxer)',
   'W8', 'W12',
   'Rotary (Wankel)',
@@ -104,6 +105,31 @@ const MODEL_FEATURES: Record<string, string[]> = {
   'Civic': ['Power Steering', 'Power Windows', 'Central Locking', 'Airbags', 'ABS', 'Alloy Wheels', 'Sunroof'],
   'City': ['Power Steering', 'Power Windows', 'Central Locking', 'Airbags', 'ABS'],
   // Add more as needed
+}
+
+// Engine type mapping by make + model (fallbacks by vehicle type)
+const ENGINE_TYPE_BY_MODEL: Record<string, Record<string, string>> = {
+  'Honda': {
+    'CBR600RR': 'Inline-4',
+    'CBR1000RR': 'Inline-4',
+    'CBR250R': 'Single Cylinder',
+    'CBR150R': 'Single Cylinder',
+  },
+  'Kawasaki': {
+    'Ninja ZX-6R': 'Inline-4',
+    'Ninja ZX-10R': 'Inline-4',
+    'Ninja ZX14': 'Inline-4',
+  },
+  'BMW': {
+    'S 1000 RR': 'Inline-4',
+    'R 1250 GS': 'Flat-2 (Boxer)',
+  },
+  'Porsche': {
+    '911': 'Flat-6 (Boxer)',
+  },
+  'Land Rover': {
+    'Defender': 'Inline-6',
+  },
 }
 
 // Colors
@@ -155,33 +181,34 @@ export default function SellCarForm({}: SellCarFormProps) {
     const { name, value, type } = e.target
     const checked = (e.target as HTMLInputElement).checked
     
-    // Handle checkbox inputs
-    if (type === 'checkbox') {
-      setFormData({
-        ...formData,
-        [name]: checked,
-      })
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      })
-      
-      // Auto-select features when model changes
-      if (name === 'model' && value) {
-        const autoFeatures = MODEL_FEATURES[value] || []
-        setSelectedFeatures(autoFeatures)
+    setFormData((prev) => {
+      const next = {
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
       }
-      
-      // Reset model when vehicle type or make changes
+
+      if (name === 'model') {
+        const autoEngineType = value
+          ? getEngineTypeForSelection(prev.vehicle_type, prev.make, value)
+          : ''
+        next.engine_type = autoEngineType
+      }
+
       if (name === 'vehicle_type' || name === 'make') {
-        setFormData(prev => ({
-          ...prev,
-          [name]: value,
-          model: '', // Reset model
-        }))
-        setSelectedFeatures([]) // Reset features
+        next.model = ''
+        next.engine_type = ''
       }
+
+      return next
+    })
+
+    // Auto-select features when model changes
+    if (name === 'model') {
+      const autoFeatures = value ? MODEL_FEATURES[value] || [] : []
+      setSelectedFeatures(autoFeatures)
+    }
+    if (name === 'vehicle_type' || name === 'make') {
+      setSelectedFeatures([])
     }
     
     // Clear error when user starts typing
@@ -202,6 +229,17 @@ export default function SellCarForm({}: SellCarFormProps) {
         ? prev.filter(f => f !== feature)
         : [...prev, feature]
     )
+  }
+
+  /**
+   * Resolve engine type based on vehicle type, make, and model
+   */
+  const getEngineTypeForSelection = (vehicleType: string, make: string, model: string): string => {
+    if (!make || !model) return ''
+    const makeMap = ENGINE_TYPE_BY_MODEL[make]
+    if (makeMap && makeMap[model]) return makeMap[model]
+    // Fallbacks by vehicle type
+    return vehicleType === 'Bike' ? 'Single Cylinder' : 'Inline-4'
   }
 
   /**
@@ -475,6 +513,11 @@ export default function SellCarForm({}: SellCarFormProps) {
     ? numberToWords(parseFloat(formData.price))
     : ''
 
+  // Calculate mileage in words
+  const mileageInWords = formData.mileage && !isNaN(parseFloat(formData.mileage)) && parseFloat(formData.mileage) >= 0
+    ? `${numberToWords(parseFloat(formData.mileage))} km`
+    : ''
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       {/* Basic Information Section */}
@@ -682,6 +725,11 @@ export default function SellCarForm({}: SellCarFormProps) {
                 min="0"
                 className={`w-full h-10 sm:h-11 text-sm sm:text-base ${errors.mileage ? 'border-destructive' : ''}`}
               />
+              {mileageInWords && (
+                <p className="text-sm font-semibold text-primary mt-1">
+                  {mileageInWords}
+                </p>
+              )}
               {errors.mileage && (
                 <p className="text-xs sm:text-sm text-destructive">{errors.mileage}</p>
               )}
