@@ -92,7 +92,7 @@ const ALL_FEATURES = [
   'Third Row Seating', 'Roof Rails', 'Running Boards', 'Spoiler',
   'LED Headlights', 'DRL (Daytime Running Light)', 'Auto Headlights',
   'Rain Sensing Wipers', 'Auto Dimming Mirror', 'Memory Seats',
-  'Heated Seats', 'Cooled Seats', 'Ventilated Seats', 'Wireless Charging', '360 Camera'
+  'Heated Seats', 'Cooled Seats', 'Ventilated Seats', 'TPMS (Tire Pressure Monitoring System)', 'Wireless Charging', '360 Camera'
 ]
 
 // Features auto-selected based on model (PakWheels-style)
